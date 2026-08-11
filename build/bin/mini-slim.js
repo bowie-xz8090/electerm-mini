@@ -3,7 +3,7 @@
  * Drop unused native modules / build junk that UI feature-gate cannot remove.
  */
 
-const { rm, echo, ls } = require('shelljs')
+const { rm, echo } = require('shelljs')
 const { resolve } = require('path')
 const fs = require('fs')
 

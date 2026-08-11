@@ -1426,7 +1426,7 @@ export default class Sftp extends Component {
     }
   }
 
-  onSplitMouseDown = (e) => {
+  handleSplitMouseDown = (e) => {
     e.preventDefault()
     e.stopPropagation()
     const wrap = this.splitWrapRef
@@ -1458,7 +1458,7 @@ export default class Sftp extends Component {
           active: this.state.splitting
         })}
         title='拖动调整本地/远程宽度'
-        onMouseDown={this.onSplitMouseDown}
+        onMouseDown={this.handleSplitMouseDown}
       />
     )
   }

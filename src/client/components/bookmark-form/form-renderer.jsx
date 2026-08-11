@@ -256,16 +256,6 @@ export default function FormRenderer ({ config, props }) {
   }
 
   // Button handlers - exactly like original use-form-funcs
-  const save = () => {
-    action.current = 'save'
-    form.submit()
-  }
-
-  const saveAndCreateNew = () => {
-    action.current = 'saveAndCreateNew'
-    form.submit()
-  }
-
   const testConnection = () => {
     action.current = 'testConnection'
     form.submit()

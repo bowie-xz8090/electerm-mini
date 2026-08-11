@@ -118,7 +118,7 @@ export default auto(function ConnectionList ({ store, from, autoFocus, batch }) 
                   title='编辑'
                 />
               </div>
-              ))
+            ))
             : (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
