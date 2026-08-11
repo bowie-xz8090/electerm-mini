@@ -1,33 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Button, Input, Tag } from 'antd'
+import { Button, Input } from 'antd'
 import {
   CheckOutlined,
   CloseOutlined,
-  CopyOutlined,
   EditOutlined,
   PlayCircleOutlined
 } from '@ant-design/icons'
 import classnames from 'classnames'
-import { copy } from '../../common/clipboard'
-
-const riskTagProps = {
-  read_only: { color: 'blue', label: 'read_only' },
-  changes_files: { color: 'gold', label: 'changes_files' },
-  network: { color: 'orange', label: 'network' },
-  privileged: { color: 'red', label: 'privileged' },
-  destructive: { color: 'magenta', label: 'destructive' },
-  unknown: { color: 'default', label: 'unknown' }
-}
-
-const statusTagProps = {
-  pending: { color: 'gold', label: 'pending' },
-  ready: { color: 'green', label: 'ready' },
-  error: { color: 'red', label: 'error' },
-  'config-missing': { color: 'red', label: 'config-missing' }
-}
 
 export default function TerminalSmartShellOverlay ({
   proposal,
+  anchor,
   onExecute,
   onSave,
   onReject
@@ -44,30 +27,60 @@ export default function TerminalSmartShellOverlay ({
     setEditing(!initialCommand.trim() && proposal.status !== 'pending')
   }, [proposal?.id, proposal?.command, proposal?.editableCommand, proposal?.status])
 
+  useEffect(() => {
+    if (!proposal) {
+      return undefined
+    }
+    function handleKeyDown (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (editing && String(proposal.command || '').trim()) {
+          handleCancelEdit()
+          return
+        }
+        onReject?.()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [proposal, editing, onReject])
+
   const command = editing ? draftCommand : String(proposal?.command || '')
   const trimmedCommand = command.trim()
-  const canExecute = !editing && !!trimmedCommand && proposal?.status !== 'pending'
+  const canExecute = !!trimmedCommand && proposal?.status !== 'pending' && !editing
 
-  const riskTag = riskTagProps[proposal?.risk] || riskTagProps.unknown
-  const statusTag = statusTagProps[proposal?.status] || statusTagProps.ready
   const message = proposal?.message || (proposal?.status === 'pending'
     ? 'AI 正在分析请求…'
     : 'No command was generated.')
-  const skill = proposal?.skill || 'linux'
 
   const notes = useMemo(() => {
     return Array.isArray(proposal?.notes) ? proposal.notes.filter(Boolean) : []
   }, [proposal?.notes])
 
+  const overlayStyle = useMemo(() => {
+    if (!anchor) {
+      return undefined
+    }
+    const scale = anchor.scale || 1
+    const height = anchor.height || anchor.maxHeight
+    return {
+      top: anchor.top,
+      left: anchor.left,
+      width: anchor.width,
+      height: height ? `${height}px` : undefined,
+      maxHeight: height ? `${height}px` : undefined,
+      fontSize: `${anchor.fontSize || 14}px`,
+      '--smart-shell-scale': String(scale),
+      '--smart-shell-height': height ? `${height}px` : undefined
+    }
+  }, [anchor])
+
   if (!proposal) {
     return null
   }
 
-  function handleCopy () {
-    copy(trimmedCommand || proposal.command || proposal.prompt || '')
-  }
-
   function handleModify () {
+    setDraftCommand(String(proposal.command || proposal.editableCommand || ''))
     setEditing(true)
   }
 
@@ -84,7 +97,9 @@ export default function TerminalSmartShellOverlay ({
   function handleEditorKeyDown (e) {
     if (e.key === 'Escape') {
       e.preventDefault()
-      handleCancelEdit()
+      if (String(proposal.command || '').trim()) {
+        handleCancelEdit()
+      }
     }
   }
 
@@ -96,7 +111,7 @@ export default function TerminalSmartShellOverlay ({
         icon={<CheckOutlined />}
         onClick={handleSave}
       >
-        保存
+        保存修改
       </Button>
     )
   } else {
@@ -119,7 +134,8 @@ export default function TerminalSmartShellOverlay ({
         value={draftCommand}
         onChange={(e) => setDraftCommand(e.target.value)}
         onKeyDown={handleEditorKeyDown}
-        autoSize={{ minRows: 3, maxRows: 8 }}
+        autoSize={false}
+        rows={3}
         className='terminal-smart-shell-editor'
       />
     )
@@ -136,7 +152,12 @@ export default function TerminalSmartShellOverlay ({
   }
 
   return (
-    <div className='terminal-smart-shell-overlay'>
+    <div
+      className={classnames('terminal-smart-shell-overlay', {
+        'is-anchored': !!anchor
+      })}
+      style={overlayStyle}
+    >
       <div className='terminal-smart-shell-card'>
         <div className='terminal-smart-shell-head'>
           <div className='terminal-smart-shell-title'>
@@ -155,11 +176,10 @@ export default function TerminalSmartShellOverlay ({
             </Button>
             <Button
               size='small'
-              danger
               icon={<CloseOutlined />}
               onClick={() => onReject?.()}
             >
-              拒绝
+              取消
             </Button>
           </div>
         </div>
@@ -167,26 +187,6 @@ export default function TerminalSmartShellOverlay ({
         <div className='terminal-smart-shell-message'>
           {message}
         </div>
-
-        <div className='terminal-smart-shell-meta'>
-          <Tag color='purple'>{skill}</Tag>
-          <Tag color={riskTag.color}>{riskTag.label}</Tag>
-          <Tag color={statusTag.color}>{statusTag.label}</Tag>
-          <Button
-            size='small'
-            type='text'
-            icon={<CopyOutlined />}
-            onClick={handleCopy}
-          >
-            复制
-          </Button>
-        </div>
-
-        {proposal?.contextSummary && (
-          <div className='terminal-smart-shell-context'>
-            {proposal.contextSummary}
-          </div>
-        )}
 
         {commandBlock}
 

@@ -1,8 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-// import htmlPurge from 'vite-plugin-purgecss'
 import { cwd, version } from './common.js'
-import { resolve } from 'path'
+import { resolve, normalize } from 'path'
 import def from './def.js'
 
 function buildInput () {
@@ -13,38 +12,61 @@ function buildInput () {
   }
 }
 
-// Custom plugin to replace window.et.isWebApp with false
 function replaceWebAppPlugin () {
   return {
     name: 'replace-webapp',
-    renderChunk (code, chunk) {
-      // Replace window.et.isWebApp with false in the bundled code
+    renderChunk (code) {
       const newCode = code.replace(/window\.et\.isWebApp/g, 'false')
       if (newCode !== code) {
-        return {
-          code: newCode,
-          map: null
-        }
+        return { code: newCode, map: null }
       }
       return null
     }
   }
 }
 
-// https://vitejs.dev/config/
+const emptyComponent = resolve(cwd, './empty-component.jsx')
+const emptyModule = resolve(cwd, './empty-module.js')
+
+/** Mini: stub RDP/VNC/Spice/Web/noVNC/ironrdp so they are not shipped */
+function miniStubPlugin () {
+  const patterns = [
+    /[/\\]rdp[/\\]rdp-session/,
+    /[/\\]vnc[/\\]vnc-session/,
+    /[/\\]spice[/\\]spice-session/,
+    /[/\\]web[/\\]web-session/,
+    /[/\\]rdp[/\\]resolution-edit/,
+    /ironrdp-wasm/,
+    /@novnc[/\\]novnc/,
+    /spice-client/
+  ]
+  return {
+    name: 'mini-stub-heavy-sessions',
+    enforce: 'pre',
+    resolveId (id, importer) {
+      const abs = id.startsWith('.') && importer
+        ? normalize(resolve(importer, '..', id))
+        : id
+      const hit = patterns.some(re => re.test(id) || re.test(abs))
+      if (!hit) {
+        return null
+      }
+      if (/ironrdp-wasm|@novnc|spice-client/.test(id) || /ironrdp-wasm|novnc|spice-client/.test(abs)) {
+        return emptyModule
+      }
+      return emptyComponent
+    }
+  }
+}
+
 export default defineConfig({
   plugins: [
+    miniStubPlugin(),
     react({ include: /\.(mdx|js|jsx|ts|tsx|mjs)$/ }),
     replaceWebAppPlugin()
   ],
   resolve: {
     alias: {
-      'ironrdp-wasm': resolve(cwd, '../../node_modules/ironrdp-wasm/pkg/rdp_client.js'),
-      // @xterm/addon-ligatures bundles lru-cache@11, which calls
-      // channel()/tracingChannel() from node:diagnostics_channel at import time.
-      // In the renderer (browser) context Vite stubs Node builtins and the call
-      // throws. lru-cache only uses it for optional metrics, so a no-op stub is
-      // safe. Covers both bare `diagnostics_channel` and the `node:` prefix.
       'node:diagnostics_channel': resolve(cwd, './diagnostics-channel-stub.js'),
       diagnostics_channel: resolve(cwd, './diagnostics-channel-stub.js')
     }

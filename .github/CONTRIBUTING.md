@@ -1,18 +1,34 @@
-# CONTRIBUTING
+# Contributing (electerm-mini)
 
-> First off, thank you for considering contributing to electerm.
+Thanks for considering a contribution to **electerm-mini**.
 
-> electerm is an open source project and I love to receive contributions from our community — you! There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports and feature requests or writing code which can be incorporated into electerm itself.
+This repo is a trimmed fork of [electerm](https://github.com/electerm/electerm) focused on **SSH / SFTP / AI Smart Shell / themes**.
 
-> Working on your first Pull Request? You can learn how from this *free* series, [How to Contribute to an Open Source Project on GitHub](https://egghead.io/series/how-to-contribute-to-an-open-source-project-on-github).
+## Scope
 
-Basic process:
+Please keep changes aligned with Mini goals:
 
-> 1. Create your own fork of the code
-> 2. Do the changes in your fork
-> 3. If you like the change and think the project could use it:
-    * Be sure you have followed the code style for the project by running `npm run lint`.
-    * Send a pull request
+- Prefer SSH / SFTP / AI / theme / sync / settings improvements
+- Avoid re-introducing Telnet / Serial / RDP / VNC / Spice / FTP session UIs unless there is an explicit product decision
+- Respect `MINI_MODE` in `src/client/common/mini-features.js` and pack slim helpers under `build/bin/mini-slim.js`
 
-> Want to report a issue or give some suggestions?
-[Submit a issue](https://github.com/electerm/electerm/issues/new)
+For features that belong in the **full** electerm client, contribute upstream instead:
+
+https://github.com/electerm/electerm
+
+## Basic process
+
+1. Fork this repository
+2. Make your changes
+3. Run `npm run lint` (and fix with `npm run fix` if needed)
+4. Open a pull request with a clear description of the Mini-relevant change
+
+## Dev quick start
+
+```bash
+npm i
+npm start          # Vite :5570
+npm run app        # Electron
+```
+
+See [README.md](../README.md) / [README_cn.md](../README_cn.md) for build & Windows packaging.

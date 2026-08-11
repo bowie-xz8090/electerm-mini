@@ -1,5 +1,6 @@
 {
-  "appId": "org.electerm.electerm",
+  "appId": "org.electerm.electerm-mini",
+  "productName": "electerm-mini",
   "directories": {
     "app": "work/app",
     "output": "dist",
@@ -9,6 +10,8 @@
     "en-US"
   ],
   "asar": true,
+  "compression": "maximum",
+  "afterPack": "./build/bin/after-pack.js",
   "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
   "win": {
     "target": [
@@ -17,9 +20,10 @@
       "nsis"
     ],
     "icon": "node_modules/@electerm/electerm-resource/build/icons-win.ico",
+    "executableName": "electerm-mini",
     "publish": {
       "provider": "github",
-      "channel": "${env.WORKFLOW_NAME}"
+      "channel": "latest"
     }
   },
   "protocols": [
@@ -30,36 +34,6 @@
       ]
     },
     {
-      "name": "Telnet Protocol",
-      "schemes": [
-        "telnet"
-      ]
-    },
-    {
-      "name": "RDP Protocol",
-      "schemes": [
-        "rdp"
-      ]
-    },
-    {
-      "name": "VNC Protocol",
-      "schemes": [
-        "vnc"
-      ]
-    },
-    {
-      "name": "Serial Protocol",
-      "schemes": [
-        "serial"
-      ]
-    },
-    {
-      "name": "Spice Protocol",
-      "schemes": [
-        "spice"
-      ]
-    },
-    {
       "name": "Electerm Protocol",
       "schemes": [
         "electerm"
@@ -67,7 +41,7 @@
     }
   ],
   "appx": {
-    "applicationId": "electerm",
+    "applicationId": "electerm-mini",
     "identityName": "64159ZHAOXudong.electerm",
     "publisher": "CN=9F481654-170A-434C-8259-984D2EB1FD7F",
     "publisherDisplayName": "ZHAO Xudong"
@@ -83,7 +57,7 @@
     "icon": "node_modules/@electerm/electerm-resource/build/icons.icns",
     "publish": {
       "provider": "github",
-      "channel": "${env.WORKFLOW_NAME}"
+      "channel": "latest"
     },
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
@@ -117,11 +91,11 @@
     ],
     "publish": {
       "provider": "github",
-      "channel": "${env.WORKFLOW_NAME}"
+      "channel": "latest"
     },
     "desktop": {
       "entry": {
-        "StartupWMClass": "electerm"
+        "StartupWMClass": "electerm-mini"
       }
     }
   },
@@ -129,7 +103,7 @@
     "confinement": "classic",
     "publish": {
       "provider": "github",
-      "channel": "${env.WORKFLOW_NAME}"
+      "channel": "latest"
     }
   },
   "deb": {

@@ -5,16 +5,13 @@ import SettingTerminal from './setting-terminal'
 import SettingCol from './col'
 import SettingAi from '../ai/ai-config'
 import SyncSetting from '../setting-sync/setting-sync'
-import Shortcuts from '../shortcuts/shortcuts'
-import SettingPasswords from './setting-passwords'
 import List from './list'
 import {
   settingMap,
   settingSyncId,
   settingTerminalId,
   settingAiId,
-  settingShortcutsId,
-  settingPasswordsId
+  settingCommonId
 } from '../../common/constants'
 import { aiConfigsArr } from '../ai/ai-config-props'
 import { pick } from 'lodash-es'
@@ -31,7 +28,6 @@ export default auto(function TabSettings (props) {
     listProps,
     store
   } = props
-  let elem = null
 
   function getInitialValues () {
     const res = pick(props.store.config, aiConfigsArr)
@@ -53,6 +49,12 @@ export default auto(function TabSettings (props) {
   }
 
   const sid = settingItem.id
+  let elem = (
+    <SettingCommon
+      {...listProps}
+      config={store.config}
+    />
+  )
   if (sid === settingSyncId) {
     const syncProps = pick(store, [
       'config',
@@ -67,26 +69,11 @@ export default auto(function TabSettings (props) {
     elem = <SettingAi {...aiConfProps} />
   } else if (sid === settingTerminalId) {
     elem = <SettingTerminal {...listProps} config={store.config} />
-  } else if (sid === settingShortcutsId) {
-    const shortcutsProps = {
-      quickCommands: store.quickCommands,
-      config: store.config
-    }
-    elem = <Shortcuts {...shortcutsProps} />
-  } else if (sid === settingPasswordsId) {
-    const passwordsProps = {
-      bookmarks: store.bookmarks,
-      editItem: store.editItem,
-      copyToClipboard: window.copyToClipboard
-    }
-    elem = <SettingPasswords {...passwordsProps} />
-  } else {
+  } else if (sid === settingCommonId) {
     elem = (
       <SettingCommon
         {...listProps}
         config={store.config}
-        bookmarks={store.bookmarks}
-        bookmarkGroups={store.bookmarkGroups}
       />
     )
   }

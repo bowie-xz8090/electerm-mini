@@ -34,7 +34,7 @@ import Opacity from '../common/opacity'
 import MoveItemModal from '../tree-list/move-item-modal'
 import InputContextMenu from '../common/input-context-menu'
 import WorkspaceSaveModal from '../tabs/workspace-save-modal'
-import BookmarkFromHistoryModal from '../bookmark-form/bookmark-from-history-modal'
+import ConnectionModal from '../bookmark-form/connection-modal'
 import AutoSync from '../setting-sync/auto-sync'
 import BatchOpRunner from '../batch-op/batch-op-runner'
 import UnixTimestampTooltip from '../terminal/unix-timestamp-tooltip'
@@ -49,6 +49,8 @@ export default auto(function Index (props) {
   useEffect(() => {
     const { store } = props
     window.addEventListener('resize', store.onResize)
+    // 立刻同步一次尺寸，避免首帧仍用占位高度；再延迟一次兜底标题栏/DPI 变化
+    store.onResize()
     setTimeout(store.triggerResize, 200)
     const { ipcOnEvent } = window.pre
     ipcOnEvent('checkupdate', store.onCheckUpdate)
@@ -99,7 +101,9 @@ export default auto(function Index (props) {
     transferToConfirm,
     openResolutionEdit,
     rightPanelTitle,
-    rightPanelTab
+    rightPanelTab,
+    connectionModalVisible,
+    connectionFormItem
   } = store
   const upgradeInfo = deepCopy(store.upgradeInfo)
   const cls = classnames({
@@ -173,13 +177,10 @@ export default auto(function Index (props) {
       'isSyncingSetting',
       'leftSidePanelWidth',
       'leftSideBarWidth',
-      'transferTab',
       'sidebarPanelTab',
       'openWidgetsModal'
     ]),
     zoom: config.zoom,
-    fileTransfers: copiedTransfer,
-    transferHistory: copiedHistory,
     upgradeInfo,
     pinned
   }
@@ -308,7 +309,12 @@ export default auto(function Index (props) {
         <TransferQueue />
         <AutoSync config={config} />
         <WorkspaceSaveModal store={store} />
-        <BookmarkFromHistoryModal />
+        <ConnectionModal
+          store={store}
+          // read by parent so manate re-renders when modal opens
+          visible={connectionModalVisible}
+          formItem={connectionFormItem}
+        />
         <NotificationContainer />
         <BatchOpRunner />
         {!isAIDisabled() && <AIConfigModal store={store} />}

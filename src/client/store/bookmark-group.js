@@ -108,7 +108,30 @@ export default Store => {
 
   Store.prototype.fixBookmarkGroups = function () {
     const { store } = window
-    const { bookmarks, bookmarkGroups } = store
+    const { bookmarks } = store
+    let { bookmarkGroups } = store
+
+    // Normalize legacy stringified groups
+    bookmarkGroups = (bookmarkGroups || []).map(bg => {
+      if (typeof bg === 'string') {
+        try {
+          return JSON.parse(bg)
+        } catch (e) {
+          return null
+        }
+      }
+      return bg
+    }).filter(Boolean)
+
+    if (!bookmarkGroups.find(g => g.id === defaultBookmarkGroupId)) {
+      bookmarkGroups.unshift({
+        title: 'default',
+        id: defaultBookmarkGroupId,
+        bookmarkIds: [],
+        bookmarkGroupIds: []
+      })
+    }
+    store.bookmarkGroups = bookmarkGroups
 
     // Create sets for quick lookup
     const bookmarkIds = new Set(bookmarks.map(b => b.id))
@@ -167,9 +190,9 @@ export default Store => {
     )
 
     // Find a suitable parent for stray groups
-    if (strayGroups.length) {
+    if (strayGroups.length && defaultGroup) {
       defaultGroup.bookmarkGroupIds = [
-        ...new Set([...defaultGroup.bookmarkGroupIds, ...strayGroups.map(g => g.id)])
+        ...new Set([...(defaultGroup.bookmarkGroupIds || []), ...strayGroups.map(g => g.id)])
       ]
     }
   }

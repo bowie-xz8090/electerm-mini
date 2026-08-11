@@ -645,6 +645,7 @@ export default class SessionWrapper extends Component {
           onOpenSearch={this.handleOpenSearch}
           onDismissDelKeyTip={this.handleDismissDelKeyTip}
           onExitGracefully={this.handleExitGracefully}
+          onReload={() => this.props.reloadTab(this.props.tab)}
         />
         {this.renderViews()}
       </div>

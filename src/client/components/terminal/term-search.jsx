@@ -91,11 +91,16 @@ export default class TermSearch extends PureComponent {
 
   clearSearch = () => {
     const term = refs.get('term-' + this.props.activeTabId)
-    term?.searchAddon.clearDecorations()
-    term.setState({
-      searchResults: [],
-      matchIndex: -1
-    })
+    if (!term) {
+      return
+    }
+    term.searchAddon?.clearDecorations?.()
+    if (typeof term.setState === 'function') {
+      term.setState({
+        searchResults: [],
+        matchIndex: -1
+      })
+    }
   }
 
   close = () => {

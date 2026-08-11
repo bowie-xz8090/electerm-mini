@@ -10,7 +10,6 @@ import {
   maxZoom,
   minZoom
 } from '../common/constants'
-import { isAIDisabled } from '../common/ai-feature'
 
 const e = window.translate
 
@@ -54,25 +53,27 @@ export default Store => {
   }
 
   Store.prototype.onNewSsh = function () {
-    const { store } = window
-    store.storeAssign({
-      settingTab: settingMap.bookmarks
-    })
-    store.setSettingItem(getInitItem([], settingMap.bookmarks))
-    store.openSettingModal()
+    window.store.openConnectionModal()
   }
 
   Store.prototype.onNewSshAI = function () {
+    window.store.openConnectionModal()
+  }
+
+  Store.prototype.openConnectionModal = function (item) {
     const { store } = window
-    if (isAIDisabled()) {
-      return
+    try {
+      store.connectionFormItem = item || getInitItem([], settingMap.bookmarks)
+      store.connectionModalVisible = true
+    } catch (err) {
+      console.error('openConnectionModal failed', err)
     }
-    if (store.aiConfigMissing()) {
-      store.toggleAIConfig()
-      return
-    }
-    window.et.openBookmarkWithAIMode = true
-    store.onNewSsh()
+  }
+
+  Store.prototype.hideConnectionModal = function () {
+    const { store } = window
+    store.connectionModalVisible = false
+    store.connectionFormItem = null
   }
 
   Store.prototype.confirmExit = function (type) {

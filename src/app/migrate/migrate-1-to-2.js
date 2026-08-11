@@ -4,11 +4,11 @@
 
 const { resolve } = require('path')
 const { existsSync, renameSync } = require('fs')
-const { appPath, defaultUserName } = require('../common/app-props')
+const { appPath, defaultUserName, dataDirName } = require('../common/app-props')
 const log = require('../common/log')
 
 const reso = (name) => {
-  return resolve(appPath, 'electerm', 'users', defaultUserName, `electerm.${name}.nedb`)
+  return resolve(appPath, dataDirName, 'users', defaultUserName, `electerm.${name}.nedb`)
 }
 
 const tables = [

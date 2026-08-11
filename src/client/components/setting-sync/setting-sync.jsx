@@ -70,9 +70,10 @@ export default auto(function SyncSettingEntry (props) {
   const {
     dataSyncSelected
   } = props.config
-  const arr = dataSyncSelected && dataSyncSelected !== 'all'
+  const arr = (dataSyncSelected && dataSyncSelected !== 'all'
     ? dataSyncSelected.split(',')
     : Object.keys(syncDataMaps)
+  )
   const dataSelectProps = {
     dataSyncSelected: arr
   }

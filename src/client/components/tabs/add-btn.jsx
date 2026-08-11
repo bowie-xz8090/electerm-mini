@@ -88,17 +88,6 @@ export default class AddBtn extends Component {
     e.stopPropagation()
   }
 
-  handleTabAdd = () => {
-    if (!window.store.hasNodePty) {
-      window.store.onNewSsh()
-      return
-    }
-    window.store.addTab(
-      undefined, undefined,
-      this.props.batch
-    )
-  }
-
   renderMenus = () => {
     const { menuPosition, menuTop, menuLeft } = this.state
     const addBtnMenuProps = {
@@ -107,10 +96,10 @@ export default class AddBtn extends Component {
       menuTop,
       menuLeft,
       onMenuScroll: this.handleMenuScroll,
-      onTabAdd: this.handleTabAdd,
       batch: this.props.batch,
       addPanelWidth: this.props.addPanelWidth,
-      setAddPanelWidth: window.store.setAddPanelWidth
+      setAddPanelWidth: window.store.setAddPanelWidth,
+      onClose: () => this.setState({ open: false })
     }
 
     return (

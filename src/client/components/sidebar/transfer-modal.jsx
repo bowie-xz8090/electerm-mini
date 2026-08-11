@@ -59,7 +59,7 @@ export default memo(function TransferModal (props) {
   })
   return (
     <div
-      className='pd1'
+      className='pd1 transfer-popover-body'
     >
       <Tabs
         activeKey={activeTab}

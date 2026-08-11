@@ -1,8 +1,36 @@
 .sftp-wrap
   display flex
   flex-direction row
+  align-items stretch
+  &.splitting
+    user-select none
+    cursor col-resize
 .sftp-section
-  flex 1
+  min-width 0
+  overflow hidden
+.sftp-split-handle
+  flex 0 0 8px
+  width 8px
+  cursor col-resize
+  position relative
+  z-index 6
+  background transparent
+  &:before
+    content ''
+    position absolute
+    left 50%
+    top 0
+    bottom 0
+    width 0
+    transform translateX(-50%)
+    border-left 1px dashed rgba(255, 255, 255, 0.55)
+  &:hover:before
+  &.active:before
+    border-left-color #fff
+    border-left-width 1px
+body.sftp-splitting
+  cursor col-resize !important
+  user-select none !important
 .sftp-title-wrap
   position relative
 .sftp-item

@@ -19,7 +19,7 @@ const DATA_ENC_ID = 'userConfig'
 const ENC_PREFIX = 'enc:'
 
 function createDb (appPath, defaultUserName, { enc, dec } = {}) {
-  const appDataPath = process.env.DATA_PATH || resolve(appPath, 'electerm')
+  const appDataPath = process.env.DATA_PATH || resolve(appPath, require('../common/mini-identity').dataDirName)
 
   if (!fs.existsSync(appDataPath)) {
     fs.mkdirSync(appDataPath, { recursive: true })

@@ -1,12 +1,13 @@
-## **Reporting Security Issues**
+## Reporting Security Issues
 
+If you believe you have found a security vulnerability in **electerm-mini (this repository)**, please report it promptly.
 
-If you believe you have found a security vulnerability in electerm, we encourage you to report it immediately.
+We review legitimate reports and work to fix issues that affect the safety and reliability of this Mini build (SSH / SFTP / AI Shell).
 
-We review all legitimate reports and work quickly to fix any issues to ensure the safety, reliability, and stability of our services
+如果您认为在 **electerm-mini（本仓库）** 中发现了安全漏洞，请尽快报告。
 
-如果您认为在 electerm 中发现了一个安全漏洞，我们鼓励您立即报告。
+我们会审查合理报告，并尽快修复影响本精简版（SSH / SFTP / AI Shell）安全性与稳定性的问题。
 
-我们会审查所有合理的报告，并尽快修复相关问题，以确保我们服务的安全性、可靠性和稳定性。
+For vulnerabilities that also exist in **upstream electerm**, please also consider reporting to the upstream project: https://github.com/electerm/electerm
 
 email: zxdong@gmail.com

@@ -26,6 +26,13 @@ if (isWin) {
   delete pack.dependencies['node-powershell']
 }
 
+const {
+  applyMiniDepExcludes,
+  slimInstalledModules,
+  slimFrontendAssets
+} = require('./mini-slim')
+applyMiniDepExcludes(pack)
+
 echo('start pack prepare')
 // echo('install test deps')
 // exec(`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm i -D -E playwright@1.28.1 --no-save && npm i -D -E @playwright/test@1.28.1 --no-save`)
@@ -105,6 +112,11 @@ exec(`cd work/app && yarn generate-lock-entry > yarn.lock && yarn autoclean --fo
 rm('-rf', 'work/app/.yarnclean')
 rm('-rf', 'work/app/package-lock.json')
 rm('-rf', 'work/app/yarn.lock')
+
+// Mini edition: drop unused deps leftovers + node-pty build junk + unused UI assets
+slimInstalledModules('work/app/node_modules')
+slimFrontendAssets('work/app/assets')
+
 require('./clean-empty-folders').main()
 
 const endTime = +new Date()

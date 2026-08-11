@@ -496,6 +496,9 @@ class TerminalSshBase extends TerminalBase {
           }
           this.channel = channel
           this.setNoDelay(true)
+          // Shell often prints MOTD/prompt before the browser WS attaches.
+          // Buffer early output so the first client does not open an empty terminal.
+          this.startPreWsBuffer(channel)
           globalState.setSession(this.pid, this)
           resolve(this)
         }
@@ -898,7 +901,53 @@ class TerminalSshBase extends TerminalBase {
     this.channel?.setWindow(rows, cols)
   }
 
+  startPreWsBuffer (channel = this.channel) {
+    if (!channel || this._preWsStarted) {
+      return
+    }
+    this._preWsStarted = true
+    this._preWsBuffer = []
+    this._preWsBufferBytes = 0
+    this._preWsMaxBytes = 256 * 1024
+    this._dataForward = null
+    const onData = (data) => {
+      if (this._dataForward) {
+        this._dataForward(data)
+        return
+      }
+      const chunk = Buffer.isBuffer(data) ? data : Buffer.from(data)
+      this._preWsBuffer.push(chunk)
+      this._preWsBufferBytes += chunk.length
+      while (
+        this._preWsBufferBytes > this._preWsMaxBytes &&
+        this._preWsBuffer.length > 1
+      ) {
+        const dropped = this._preWsBuffer.shift()
+        this._preWsBufferBytes -= dropped.length
+      }
+    }
+    channel.on('data', onData)
+    if (channel.stderr && typeof channel.stderr.on === 'function') {
+      channel.stderr.on('data', onData)
+    }
+    this._preWsOnData = onData
+  }
+
   on (event, cb) {
+    if (event === 'data') {
+      // First WS client: flush buffered MOTD/prompt, then forward live output.
+      if (this._preWsBuffer?.length) {
+        for (const chunk of this._preWsBuffer) {
+          cb(chunk)
+        }
+        this._preWsBuffer = []
+        this._preWsBufferBytes = 0
+      }
+      if (this._preWsStarted) {
+        this._dataForward = cb
+        return
+      }
+    }
     this.channel.on(event, cb)
     this.channel.stderr.on(event, cb)
   }

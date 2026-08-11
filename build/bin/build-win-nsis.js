@@ -17,7 +17,8 @@ async function main () {
   const src = 'win-x64-installer.exe'
   rm('-rf', 'dist')
   writeSrc(src)
-  await run(`${pb} --win nsis`)
+  // --publish never: local builds must not require CI publish env vars
+  await run(`${pb} --win nsis --publish never`)
   await uploadToR2(src)
 }
 

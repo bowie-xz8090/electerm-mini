@@ -148,7 +148,8 @@ class Term extends Component {
       dropFileModalVisible: false,
       droppedFiles: [],
       fontSizeChanged: false,
-      smartShellProposal: null
+      smartShellProposal: null,
+      smartShellOverlayAnchor: null
     }
     this.id = `term-${this.props.tab.id}`
     refs.add(this.id, this)
@@ -156,6 +157,7 @@ class Term extends Component {
     this.shellInjected = false
     this.shellType = null
     this.smartShellProposalId = ''
+    this._smartShellPadLines = 0
   }
 
   domRef = createRef()
@@ -167,7 +169,7 @@ class Term extends Component {
     }
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate (prevProps, prevState) {
     const shouldChange = (
       prevProps.currentBatchTabId !== this.props.currentBatchTabId &&
       this.props.tab.id === this.props.currentBatchTabId &&
@@ -201,6 +203,22 @@ class Term extends Component {
           setTimeout(() => this.fitAndRefresh(), 80)
         }
       })
+    }
+    if (
+      this.state.smartShellProposal &&
+      (
+        prevState.smartShellProposal !== this.state.smartShellProposal ||
+        !isEqual(pick(this.props, names), pick(prevProps, names))
+      )
+    ) {
+      requestAnimationFrame(() => {
+        this.updateSmartShellOverlayAnchor()
+        setTimeout(() => this.updateSmartShellOverlayAnchor(), 60)
+      })
+    } else if (!this.state.smartShellProposal && prevState.smartShellProposal) {
+      if (this.state.smartShellOverlayAnchor) {
+        this.setState({ smartShellOverlayAnchor: null })
+      }
     }
     this.checkConfigChange(
       prevProps,
@@ -605,18 +623,142 @@ class Term extends Component {
   }
 
   clearSmartShellProposal = () => {
+    this.clearSmartShellCursorSpace()
     this.smartShellProposalId = ''
-    this.setState({ smartShellProposal: null })
+    this.setState({
+      smartShellProposal: null,
+      smartShellOverlayAnchor: null
+    })
   }
 
   clearShellInputLine = () => {
-    if (this.attachAddon?._sendData) {
-      // Ctrl+U asks readline/zsh/bash to clear everything before the cursor.
-      // The natural-language text has already been sent to the shell while
-      // typing, so blocking Enter alone is not enough; without this, the
-      // approved AI command would be appended to the old text.
-      this.attachAddon._sendData('\x15')
+    if (!this.attachAddon?._sendData) {
+      return
     }
+    // Natural-language text has already been echoed to the shell while typing,
+    // so blocking Enter alone is not enough; clear the editable line first.
+    const input = String(this.getCurrentInput() || '')
+    const shell = String(this.shellType || '').toLowerCase()
+    const isWindowsShell = shell.includes('powershell') ||
+      shell.includes('pwsh') ||
+      shell === 'cmd' ||
+      (isWin && !this.isRemote())
+    if (isWindowsShell) {
+      // Ctrl+U is a readline binding; PowerShell/cmd prints it as literal "^U".
+      // Delete the editable text with backspaces instead.
+      if (input.length) {
+        this.attachAddon._sendData('\b'.repeat(input.length))
+      }
+      return
+    }
+    // Ctrl+U asks readline/zsh/bash to clear everything before the cursor.
+    this.attachAddon._sendData('\x15')
+  }
+
+  /**
+   * 固定 AI 提示窗高度（含标题、提示文案、至少 3 行命令预览区）。
+   */
+  getSmartShellOverlayHeight = (fontSize = 14) => {
+    // head + message + 3-line command(+pad) + notes 预留 + margins
+    return Math.round(Math.max(12, fontSize) * 18.5)
+  }
+
+  /**
+   * 在命令行下方预留固定弹窗高度对应的终端行数。
+   * 写假换行后必须恢复光标列，否则列落到 0，取消时清屏会擦掉整行命令。
+   * 仅当光标靠近底端、下方空间不足时才上移；上方有足够空间时不动。
+   */
+  ensureSmartShellCursorSpace = () => {
+    if (!this.term) {
+      return
+    }
+    this.clearSmartShellCursorSpace()
+    const rows = this.term.rows || 0
+    if (rows < 4) {
+      return
+    }
+    const fontSize = this.term.options?.fontSize || 14
+    const overlayHeight = this.getSmartShellOverlayHeight(fontSize)
+    const gap = 20
+    const pos = this.getCursorPosition()
+    const cellHeight = pos?.cellHeight || (this.domRef.current?.clientHeight / rows) || (fontSize * 1.4)
+    const needRows = Math.max(1, Math.ceil((overlayHeight + gap) / cellHeight))
+    const cursorY = this.term.buffer.active.cursorY
+    const cursorX = this.term.buffer.active.cursorX
+    const spaceBelow = rows - cursorY - 1
+    // 下方已经够放弹窗：不动光标（不影响中间/上方的情况）
+    if (spaceBelow >= needRows) {
+      this._smartShellPadLines = 0
+      return
+    }
+    // 底端：多预留 2 行空隙，避免弹窗贴住/挡住光标行
+    const extraBreathing = 2
+    const need = Math.min(
+      needRows - spaceBelow + extraBreathing,
+      Math.max(0, rows - 3)
+    )
+    if (need <= 0) {
+      this._smartShellPadLines = 0
+      return
+    }
+    this._smartShellPadLines = need
+    // \r\n 会把列重置为 0；上移后用 CHA 恢复原列（1-based）
+    const col = Math.max(1, cursorX + 1)
+    this.term.write('\r\n'.repeat(need) + `\x1b[${need}A\x1b[${col}G`)
+  }
+
+  clearSmartShellCursorSpace = () => {
+    const need = this._smartShellPadLines || 0
+    this._smartShellPadLines = 0
+    if (!need || !this.term) {
+      return
+    }
+    // 光标仍在命令行原列；只擦除下方临时空白行
+    this.term.write('\x1b[0J')
+  }
+
+  getSmartShellOverlayAnchor = () => {
+    if (!this.term || !this.state.smartShellProposal) {
+      return null
+    }
+    const pos = this.getCursorPosition()
+    const wrapEl = this.domRef.current?.parentElement
+    if (!pos || !wrapEl) {
+      return null
+    }
+    const wrapRect = wrapEl.getBoundingClientRect()
+    const fontSize = Math.max(12, Math.min(16, this.term.options?.fontSize || 14))
+    const gap = 20
+    const preferredHeight = this.getSmartShellOverlayHeight(fontSize)
+    // 始终锚在光标行下方，绝不把弹窗上推到盖住光标
+    const top = Math.max(8, pos.top - wrapRect.top + gap)
+    const available = Math.max(120, wrapRect.height - top - 12)
+    const height = Math.min(preferredHeight, available)
+    return {
+      top,
+      left: 12,
+      width: Math.max(240, wrapRect.width - 24),
+      height,
+      maxHeight: height,
+      fontSize,
+      scale: Math.max(0.85, Math.min(1.15, wrapRect.width / 900))
+    }
+  }
+
+  updateSmartShellOverlayAnchor = () => {
+    if (!this.state.smartShellProposal) {
+      if (this.state.smartShellOverlayAnchor) {
+        this.setState({ smartShellOverlayAnchor: null })
+      }
+      return
+    }
+    const anchor = this.getSmartShellOverlayAnchor()
+    this.setState(prev => {
+      if (isEqual(prev.smartShellOverlayAnchor, anchor)) {
+        return null
+      }
+      return { smartShellOverlayAnchor: anchor }
+    })
   }
 
   updateSmartShellProposal = (updates) => {
@@ -633,6 +775,14 @@ class Term extends Component {
     })
   }
 
+  restoreShellInputLine = (text) => {
+    const value = String(text || '')
+    if (!value || !this.attachAddon?._sendData) {
+      return
+    }
+    this.attachAddon._sendData(value)
+  }
+
   handleSmartShellReject = () => {
     const proposal = this.state.smartShellProposal
     if (proposal?.id) {
@@ -641,8 +791,14 @@ class Term extends Component {
         rejectedAt: Date.now()
       })
     }
+    // Keep the original command-line text; only close the overlay
     this.clearSmartShellProposal()
-    this.term?.focus()
+    if (this.term && !this.onClose) {
+      try {
+        this.term.refresh(0, this.term.rows - 1)
+      } catch (e) {}
+      this.term.focus()
+    }
   }
 
   handleSmartShellSave = (command) => {
@@ -735,6 +891,8 @@ class Term extends Component {
 
     this.setState({
       smartShellProposal: baseProposal
+    }, () => {
+      this.updateSmartShellOverlayAnchor()
     })
     const proposalContext = await this.collectSmartShellContext(currentPrompt)
     if (this.onClose || this.smartShellProposalId !== proposalId) {
@@ -885,6 +1043,12 @@ class Term extends Component {
     if (!this.term || this.onClose) {
       return false
     }
+    // shortcut-handler and attach-addon may both see the same Enter;
+    // only handle it once so Windows backspace-clear does not delete the prompt.
+    const now = Date.now()
+    if (this._smartShellEnterAt && now - this._smartShellEnterAt < 80) {
+      return true
+    }
     if (this.term.buffer.active.type === 'alternate') {
       return false
     }
@@ -905,15 +1069,27 @@ class Term extends Component {
       return false
     }
 
+    this._smartShellEnterAt = now
+
     const proposal = this.state.smartShellProposal
     if (proposal && proposal.prompt === currentPrompt) {
-      this.clearShellInputLine()
+      // Keep typed text on the prompt; only ensure room for the overlay
+      this.ensureSmartShellCursorSpace()
+      requestAnimationFrame(() => {
+        this.updateSmartShellOverlayAnchor()
+        setTimeout(() => this.updateSmartShellOverlayAnchor(), 80)
+      })
       return true
     }
 
-    this.clearShellInputLine()
+    // Do not clear the shell line here — clear only when user clicks 执行
+    this.ensureSmartShellCursorSpace()
     this.startSmartShellAnalysis(currentPrompt)
     this.closeSuggestions()
+    requestAnimationFrame(() => {
+      this.updateSmartShellOverlayAnchor()
+      setTimeout(() => this.updateSmartShellOverlayAnchor(), 80)
+    })
     return true
   }
 
@@ -2347,6 +2523,8 @@ class Term extends Component {
     socket.onopen = async () => {
       await this.initAttachAddon()
       this.runInitScript()
+      // 从空白页首次进入时，容器可能尚未完成布局；延迟多次 fit，并在仍无输出时回车唤醒提示符
+      this.schedulePostConnectFit()
     }
     // term.onRrefresh(this.onRefresh)
     term.onResize(this.onResizeTerminal)
@@ -2383,16 +2561,7 @@ class Term extends Component {
   }
 
   handleEditBookmarkFromError = () => {
-    const error = this.state.terminalError
-    if (!error || error.from !== 'bookmarks' || !error.srcId) {
-      return
-    }
-    const item = window.store.bookmarksMap?.get(error.srcId) ||
-      window.store.bookmarks?.find(d => d.id === error.srcId)
-    if (!item) {
-      return
-    }
-    window.store.openBookmarkEdit(item)
+    // Bookmark editing UI has been removed
   }
 
   initSocketEvents = () => {
@@ -2439,6 +2608,56 @@ class Term extends Component {
     return el.clientWidth > 0 && el.clientHeight > 0
   }
 
+  // 从首页空会话首次打开时，Sessions 刚挂载，fit 可能读到错误尺寸或被跳过；
+  // 连接成功后补几次适配，必要时用回车唤醒已被服务端缓冲刷新前丢掉的提示符场景。
+  schedulePostConnectFit = () => {
+    const delays = [0, 50, 150, 400]
+    delays.forEach((ms, i) => {
+      const key = `postConnectFit${i}`
+      clearTimeout(this.timers[key])
+      this.timers[key] = setTimeout(() => {
+        if (this.onClose || !this.term) {
+          return
+        }
+        this.fitAndRefresh()
+        if (i === delays.length - 1) {
+          this.nudgePromptIfEmpty()
+        }
+      }, ms)
+    })
+  }
+
+  hasTerminalOutput = () => {
+    if (!this.term) {
+      return false
+    }
+    try {
+      const buf = this.term.buffer.active
+      const len = Math.min(buf.length, 80)
+      for (let i = 0; i < len; i++) {
+        const line = buf.getLine(i)
+        if (line && line.translateToString(true).trim()) {
+          return true
+        }
+      }
+    } catch (e) {}
+    return false
+  }
+
+  nudgePromptIfEmpty = () => {
+    if (
+      this.onClose ||
+      !this.attachAddon?._sendData ||
+      this.hasTerminalOutput() ||
+      !this.isSsh()
+    ) {
+      return
+    }
+    try {
+      this.attachAddon._sendData('\r')
+    } catch (e) {}
+  }
+
   // 重新适配终端尺寸并强制重绘可见区域。
   // 仅当容器真正可见时才 fit：隐藏标签(display:none)下 clientWidth 为 0，
   // 若在此时 fit 会算出 0/极小列数，使 shell 提示符被逐字符错误换行，
@@ -2461,6 +2680,7 @@ class Term extends Component {
 
   onResize = throttle(() => {
     this.fitAndRefresh()
+    this.updateSmartShellOverlayAnchor()
   }, 200)
 
   onerrorSocket = err => {
@@ -2682,7 +2902,7 @@ class Term extends Component {
           />
           <TerminalErrorHandle
             errorMessage={this.state.terminalError?.message}
-            showEditBookmarkButton={this.state.terminalError?.from === 'bookmarks' && !!this.state.terminalError?.srcId}
+            showEditBookmarkButton={false}
             onEditBookmark={this.handleEditBookmarkFromError}
           />
           <ReconnectOverlay
@@ -2690,6 +2910,7 @@ class Term extends Component {
           />
           <TerminalSmartShellOverlay
             proposal={this.state.smartShellProposal}
+            anchor={this.state.smartShellOverlayAnchor}
             onExecute={this.handleSmartShellExecute}
             onSave={this.handleSmartShellSave}
             onReject={this.handleSmartShellReject}

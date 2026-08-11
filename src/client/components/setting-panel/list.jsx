@@ -9,8 +9,16 @@ import createName, { createTitleTag } from '../../common/create-title'
 import classnames from 'classnames'
 import { noop } from 'lodash-es'
 import highlight from '../common/highlight'
-import { settingSyncId, settingCommonId, staticNewItemTabs } from '../../common/constants'
+import {
+  settingMap,
+  settingSyncId,
+  settingCommonId,
+  settingTerminalId,
+  settingAiId,
+  staticNewItemTabs
+} from '../../common/constants'
 import getInitItem from '../../common/init-setting-item'
+import './list.styl'
 
 const e = window.translate
 
@@ -64,7 +72,13 @@ export default class ItemList extends React.PureComponent {
   }
 
   renderDelBtn = item => {
-    if (!item.id || [settingSyncId, settingCommonId].includes(item.id) || item.id.startsWith('default')) {
+    const { type } = this.props
+    // Settings sidebar items are fixed entries, never deletable
+    if (type === settingMap.setting) {
+      return null
+    }
+    const fixedIds = [settingSyncId, settingCommonId, settingTerminalId, settingAiId]
+    if (!item.id || fixedIds.includes(item.id) || String(item.id).startsWith('default')) {
       return null
     }
     const { shouldConfirmDel } = this.props
@@ -75,7 +89,7 @@ export default class ItemList extends React.PureComponent {
         onClick={
           shouldConfirmDel
             ? noop
-            : e => this.del(item, e)
+            : ev => this.del(item, ev)
         }
       />
     )
@@ -83,7 +97,7 @@ export default class ItemList extends React.PureComponent {
       return (
         <Popconfirm
           title={e('del') + '?'}
-          onConfirm={e => this.del(item, e)}
+          onConfirm={ev => this.del(item, ev)}
           okText={e('del')}
           cancelText={e('cancel')}
           placement='top'

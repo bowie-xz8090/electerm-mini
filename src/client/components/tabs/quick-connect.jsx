@@ -58,8 +58,12 @@ export default function QuickConnect ({ batch, inputOnly }) {
     if (!opts) {
       return message.error('Format error, please check the input', 10)
     }
+    const type = opts.type || 'ssh'
+    if (type !== 'ssh') {
+      return message.error('Mini 版仅支持 SSH 连接', 8)
+    }
 
-    connectWithOptions(opts, batch)
+    connectWithOptions({ ...opts, type: 'ssh' }, batch)
     setInputValue('')
     setShowInput(false)
   }
@@ -74,7 +78,7 @@ export default function QuickConnect ({ batch, inputOnly }) {
       onChange: handleChange,
       className: 'width-100 quick-connect-input',
       onPressEnter: handleConnect,
-      placeholder: 'ssh|rdp|vnc|spice|serial|http|https://[username]:[password]@host:port?opts={...}',
+      placeholder: 'ssh://user:pass@host:22 或 user@host',
       prefix: inputOnly ? <HelpIcon link={wiki} /> : undefined
     }
     const iconProps = {

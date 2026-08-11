@@ -2,6 +2,8 @@
  * serial port lib
  */
 
+const log = require('../common/log')
+
 exports.listSerialPorts = async function () {
   try {
     const start = Date.now()
@@ -12,7 +14,8 @@ exports.listSerialPorts = async function () {
     }
     return r
   } catch (error) {
-    console.error('Error listing serial ports:', error)
-    return Promise.resolve([]) // Return an empty array on error
+    // Mini edition may omit serialport native module
+    log.debug('listSerialPorts unavailable', error?.message || error)
+    return []
   }
 }

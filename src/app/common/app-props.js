@@ -5,6 +5,7 @@ const { app } = require('electron')
 const { resolve } = require('path')
 const constants = require('./runtime-constants')
 const installSrc = require('../lib/install-src')
+const { dataDirName } = require('./mini-identity')
 
 function getDataPath () {
   const defaultValue = {
@@ -14,8 +15,10 @@ function getDataPath () {
   if (!constants.isWin) {
     return defaultValue
   }
-  const exePath = app.getPath('exe').replace('\\electerm.exe', '')
-  const p = exePath + '\\' + 'electerm'
+  const exePath = app.getPath('exe')
+    .replace(/\\electerm-mini\.exe$/i, '')
+    .replace(/\\electerm\.exe$/i, '')
+  const p = exePath + '\\' + dataDirName
   if (
     installSrc === 'win-x64-portable.tar.gz' ||
     require('fs').existsSync(
@@ -40,5 +43,6 @@ module.exports = {
     app.getPath('home'),
     '.ssh'
   ),
+  dataDirName,
   ...constants
 }

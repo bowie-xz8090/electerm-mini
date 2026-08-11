@@ -26,7 +26,8 @@ const trayIconPath = resolve(
   __dirname,
   (
     isDev
-      ? '../../../node_modules/@electerm/electerm-resource/tray-icons/electerm-tray.png'
+      // electerm-resource@2.x may not ship tray-icons/; reuse app icon
+      ? '../../../node_modules/@electerm/electerm-resource/res/imgs/electerm-round-128x128.png'
       : '../assets/images/electerm-tray.png'
   )
 )

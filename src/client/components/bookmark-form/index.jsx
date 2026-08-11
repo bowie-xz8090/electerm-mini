@@ -1,52 +1,23 @@
 /**
- * Config-driven bookmark form (drop-in replacement)
+ * Config-driven connection form (SSH mini edition)
  */
 import { PureComponent } from 'react'
-import { Radio, Button } from 'antd'
 import {
   settingMap,
   connectionMap,
-  terminalSerialType,
-  terminalWebType,
-  terminalRdpType,
-  terminalVncType,
-  terminalLocalType,
-  terminalTelnetType,
-  terminalFtpType,
-  newBookmarkIdPrefix,
-  terminalSpiceType
+  newBookmarkIdPrefix
 } from '../../common/constants'
 import { createTitleWithTag } from '../../common/create-title'
-import { LoadingOutlined, BookOutlined, RobotOutlined } from '@ant-design/icons'
-import sessionConfig from './config/session-config'
+import { LoadingOutlined, BookOutlined } from '@ant-design/icons'
 import renderForm from './render-form'
-import AIBookmarkForm from './ai-bookmark-form'
-import { isAIDisabled } from '../../common/ai-feature'
 import './bookmark-form.styl'
-
-const e = window.translate
 
 export default class BookmarkIndex2 extends PureComponent {
   constructor (props) {
     super(props)
-    let initType = props.formData.type
-    if (![
-      terminalTelnetType,
-      terminalWebType,
-      terminalLocalType,
-      terminalSerialType,
-      terminalRdpType,
-      terminalVncType,
-      terminalFtpType,
-      terminalSpiceType
-    ].includes(initType)) {
-      initType = connectionMap.ssh
-    }
-    const v = this.getInitAiModeState()
     this.state = {
-      ready: v,
-      bookmarkType: initType,
-      aiMode: v
+      ready: false,
+      bookmarkType: connectionMap.ssh
     }
   }
 
@@ -58,60 +29,6 @@ export default class BookmarkIndex2 extends PureComponent {
 
   componentWillUnmount () {
     clearTimeout(this.timer)
-    clearTimeout(this.timer1)
-  }
-
-  getInitAiModeState () {
-    if (isAIDisabled()) {
-      return false
-    }
-    const v = window.et.openBookmarkWithAIMode
-    if (v !== true) {
-      return false
-    }
-    this.timer1 = setTimeout(() => {
-      delete window.et.openBookmarkWithAIMode
-    }, 1000)
-
-    return true
-  }
-
-  handleChange = (e) => {
-    this.setState({ bookmarkType: e.target.value })
-  }
-
-  handleCancelAiMode = () => {
-    this.setState({ aiMode: false })
-  }
-
-  handleToggleAIMode = () => {
-    if (window.store.aiConfigMissing()) {
-      window.store.toggleAIConfig()
-      return
-    }
-    this.setState(prev => ({ aiMode: !prev.aiMode }))
-  }
-
-  renderTypes (bookmarkType, isNew, keys) {
-    if (!isNew || this.state.aiMode) return null
-    const filtered = window.et && Array.isArray(window.et.supportSessionTypes)
-      ? keys.filter(k => window.et.supportSessionTypes.includes(k))
-      : keys
-    return (
-      <Radio.Group
-        buttonStyle='solid'
-        size='small'
-        className='mg1l'
-        value={bookmarkType}
-        disabled={!isNew}
-        onChange={this.handleChange}
-      >
-        {filtered.map(v => {
-          const txt = v === 'ssh' ? 'Ssh/Sftp' : e(v)
-          return (<Radio.Button key={v} value={v}>{txt}</Radio.Button>)
-        })}
-      </Radio.Group>
-    )
   }
 
   renderTitle (formData, isNew) {
@@ -123,36 +40,8 @@ export default class BookmarkIndex2 extends PureComponent {
     )
   }
 
-  renderAIButton (isNew) {
-    if (!isNew || this.state.aiMode || isAIDisabled()) {
-      return null
-    }
-    return (
-      <Button
-        size='small'
-        className='mg2l create-ai-btn'
-        icon={<RobotOutlined />}
-        onClick={this.handleToggleAIMode}
-      >
-        {e('createBookmarkByAI')}
-      </Button>
-    )
-  }
-
-  renderAiForm () {
-    return (
-      <AIBookmarkForm
-        onCancel={this.handleCancelAiMode}
-      />
-    )
-  }
-
   renderForm () {
-    const { bookmarkType, aiMode } = this.state
-    if (aiMode) {
-      return this.renderAiForm()
-    }
-    return renderForm(bookmarkType, this.props)
+    return renderForm(this.state.bookmarkType, this.props)
   }
 
   render () {
@@ -160,7 +49,7 @@ export default class BookmarkIndex2 extends PureComponent {
     const { id = '' } = formData
     const { type } = this.props
     if (type !== settingMap.bookmarks) return null
-    const { ready, bookmarkType } = this.state
+    const { ready } = this.state
     if (!ready) {
       return (
         <div className='pd3 aligncenter'>
@@ -169,17 +58,14 @@ export default class BookmarkIndex2 extends PureComponent {
       )
     }
     const isNew = id.startsWith(newBookmarkIdPrefix)
-    const keys = Object.keys(sessionConfig)
     return (
       <div className='form-wrap pd1x'>
         <div className='form-title pd1t pd1x pd2b bold'>
           <BookOutlined className='mg1r' />
           <span>
-            {((!isNew ? e('edit') : e('new')) + ' ' + e(settingMap.bookmarks))}
+            {isNew ? '新建连接' : '编辑连接'}
           </span>
           {this.renderTitle(formData, isNew)}
-          {this.renderTypes(bookmarkType, isNew, keys)}
-          {this.renderAIButton(isNew)}
         </div>
         {this.renderForm()}
       </div>

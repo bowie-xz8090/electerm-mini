@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 import createTitle, { createTitleWithTag } from '../../common/create-title'
-import { DeleteOutlined, BookFilled } from '@ant-design/icons'
-import { refsStatic } from '../common/ref'
+import { DeleteOutlined } from '@ant-design/icons'
 
 export default function HistoryItem (props) {
   const { store } = window
@@ -36,10 +35,6 @@ export default function HistoryItem (props) {
     }
   }
 
-  function handleBookmark (e) {
-    e.stopPropagation()
-    refsStatic.get('bookmark-from-history-modal')?.show(item.tab)
-  }
   if (!item.tab) {
     return null
   }
@@ -54,11 +49,6 @@ export default function HistoryItem (props) {
       <div className='elli pd1y pd2x'>
         {title}
       </div>
-      <BookFilled
-        className='list-item-bookmark'
-        title={window.translate('bookmark')}
-        onClick={handleBookmark}
-      />
       <DeleteOutlined
         className='list-item-edit'
         onClick={handleDelete}

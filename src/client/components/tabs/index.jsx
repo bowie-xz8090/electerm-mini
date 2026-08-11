@@ -69,10 +69,6 @@ export default class Tabs extends Component {
     window.store.addTab(undefined, undefined, this.props.batch)
   }
 
-  handleNewSsh = () => {
-    window.store.onNewSsh()
-  }
-
   tabsWidth = () => {
     const { batch } = this.props
     return Array.from(
@@ -113,7 +109,6 @@ export default class Tabs extends Component {
 
   handleTabAdd = () => {
     if (!window.store.hasNodePty) {
-      window.store.onNewSsh()
       return
     }
     window.store.addTab(
@@ -459,7 +454,6 @@ export default class Tabs extends Component {
       <NoSession
         height={this.props.height}
         onNewTab={this.handleNewTab}
-        onNewSsh={this.handleNewSsh}
         batch={this.props.batch}
       />
     )

@@ -11,7 +11,6 @@ import calcSessionSize from './session-size-alg'
 import TermSearch from '../terminal/term-search'
 import Footer from '../footer/footer-entry'
 import SessionsWrap from '../session/sessions'
-import QuickCommandsFooterBox from '../quick-commands/quick-commands-box'
 import pixed from './pixed'
 import { pick } from 'lodash-es'
 import './layout.styl'
@@ -150,18 +149,6 @@ export default auto(function Layout (props) {
   const footerProps = {
     store
   }
-  const qmProps = pick(store, [
-    'quickCommandTags',
-    'qmSortByFrequency',
-    'openQuickCommandBar',
-    'pinnedQuickCommandBar',
-    'qmSortByFrequency',
-    'inActiveTerminal',
-    'leftSidePanelWidth',
-    'leftSideBarWidth',
-    'openedSideBar',
-    'currentQuickCommands'
-  ])
   const sessionsProps = {
     styles: styles.wrapStyles,
     sizes,
@@ -199,10 +186,6 @@ export default auto(function Layout (props) {
     <TermSearch
       key='TermSearch'
       {...termProps}
-    />,
-    <QuickCommandsFooterBox
-      key='QuickCommandsFooterBox'
-      {...qmProps}
     />,
     <Footer
       key='Footer'

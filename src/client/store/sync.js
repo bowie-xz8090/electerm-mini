@@ -717,13 +717,16 @@ export default (Store) => {
   }
 
   Store.prototype.toggleDataSyncSelected = function (key) {
+    if (key === 'bookmarks') {
+      return
+    }
     const { store } = window
     const {
       dataSyncSelected = 'all'
     } = store.config
     let arr = dataSyncSelected && dataSyncSelected !== 'all'
       ? dataSyncSelected.split(',')
-      : Object.keys(syncDataMaps)
+      : Object.keys(syncDataMaps).filter(d => d !== 'bookmarks')
     if (arr.includes(key)) {
       arr = arr.filter(d => d !== key)
     } else {
@@ -739,9 +742,10 @@ export default (Store) => {
       dataSyncSelected = 'all'
     } = store.config
     const syncAll = all || dataSyncSelected === 'all'
-    const keys = syncAll
+    const keys = (syncAll
       ? Object.keys(syncDataMaps)
       : dataSyncSelected.split(',')
+    ).filter(d => d !== 'bookmarks')
     const names = keys
       .filter(d => d !== 'settings')
       .map(d => syncDataMaps[d]).flat()

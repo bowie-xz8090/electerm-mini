@@ -110,6 +110,9 @@ class ShortcutControl extends React.PureComponent {
 
   searchShortcut = throttle((e) => {
     e.stopPropagation()
+    if (!window.store.activeTabId) {
+      return
+    }
     refsStatic.get('term-search')?.toggleSearch()
   }, 500)
 
@@ -169,15 +172,13 @@ class ShortcutControl extends React.PureComponent {
 
   newBookmarkShortcut = throttle((e) => {
     e.stopPropagation()
-    window.store.onNewSsh()
+    window.store.openConnectionModal()
   }, 500)
 
   newTabShortcut = throttle((e) => {
     e.stopPropagation()
     if (window.store.hasNodePty) {
       window.store.addTab()
-    } else {
-      window.store.onNewSsh()
     }
   }, 500)
 

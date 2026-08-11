@@ -84,11 +84,16 @@ export function getItem (id) {
 
 export function getItemJSON (id, defaultValue) {
   const str = window.localStorage.getItem(id) || ''
-  const r = parseJsonSafe(str)
-  if (typeof r === 'string') {
+  if (!str) {
     return defaultValue
   }
-  return r || defaultValue
+  const r = parseJsonSafe(str)
+  if (r == null || typeof r === 'string') {
+    // Corrupt plaintext — drop it so we stop retrying every load
+    try { window.localStorage.removeItem(id) } catch (e) {}
+    return defaultValue
+  }
+  return r
 }
 
 export function setItemJSON (id, obj) {
@@ -123,12 +128,18 @@ export function safeGetItemJSON (id, defaultValue) {
   if (window.et.isWebApp) {
     return getItemJSON(id, defaultValue)
   }
-  const str = decrypt(window.localStorage.getItem(id) || '')
-  const r = parseJsonSafe(str)
-  if (typeof r === 'string') {
+  const raw = window.localStorage.getItem(id) || ''
+  if (!raw) {
     return defaultValue
   }
-  return r || defaultValue
+  const str = decrypt(raw)
+  const r = parseJsonSafe(str)
+  if (r == null || typeof r === 'string') {
+    // Corrupt / undecryptable (e.g. key rotated after DATA_PATH change)
+    try { window.localStorage.removeItem(id) } catch (e) {}
+    return defaultValue
+  }
+  return r
 }
 
 export function safeSetItemJSON (id, obj) {

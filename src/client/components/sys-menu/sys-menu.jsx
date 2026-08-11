@@ -9,7 +9,6 @@ import {
 } from 'antd'
 import { noop } from 'lodash-es'
 import History from './history'
-import Bookmark from './boomarks'
 import Layout from './layoout-changer'
 import Tabs from './tabs'
 import Zoom from './zoom'
@@ -21,7 +20,6 @@ const e = window.translate
 export default class ContextMenu extends PureComponent {
   modules = {
     History,
-    Bookmark,
     Tabs,
     Zoom,
     Layout
@@ -74,8 +72,9 @@ export default class ContextMenu extends PureComponent {
       module,
       submenu
     } = item
+    const itemKey = `context-item-${i}-${type || module || text || 'item'}`
     if (type === 'hr') {
-      return <hr />
+      return <hr key={itemKey} />
     }
     let baseCls = 'context-item'
     if (module && this.modules[module]) {
@@ -84,7 +83,7 @@ export default class ContextMenu extends PureComponent {
         baseCls = 'context-item zoom-item'
       }
       return (
-        <div className={baseCls}>
+        <div key={itemKey} className={baseCls}>
           <Mod {...this.props} />
         </div>
       )
@@ -112,7 +111,7 @@ export default class ContextMenu extends PureComponent {
       : (e) => this.onClick(e, item)
     const unit = (
       <div
-        key={`context-item-${i}-${text}`}
+        key={itemKey}
         className={cls}
         onClick={act}
       >
@@ -134,7 +133,7 @@ export default class ContextMenu extends PureComponent {
     return (
       <Popconfirm
         cancelText={e('cancel')}
-        key={`context-item-${i}-${text}`}
+        key={itemKey}
         okText={e('ok')}
         title={title}
         onConfirm={(e) => this.onClick(e, item)}

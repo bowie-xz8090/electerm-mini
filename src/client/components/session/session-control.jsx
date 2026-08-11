@@ -10,7 +10,8 @@ import {
   ApartmentOutlined,
   MoreOutlined,
   ColumnWidthOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  ReloadOutlined
 } from '@ant-design/icons'
 import { Tooltip, Popover } from 'antd'
 import classnames from 'classnames'
@@ -21,6 +22,7 @@ import {
 } from '../../common/constants'
 import { SplitViewIcon } from '../icons/split-view'
 import { HeartbeatIcon } from '../icons/heartbeat'
+import TransferList from '../sidebar/transfer-list'
 import './session-control.styl'
 
 const e = window.translate
@@ -48,7 +50,8 @@ export default function SessionControl (props) {
     onFullscreen,
     onOpenSearch,
     onDismissDelKeyTip,
-    onExitGracefully
+    onExitGracefully,
+    onReload
   } = props
 
   if (isNotTerminalType) {
@@ -58,6 +61,11 @@ export default function SessionControl (props) {
   const isSsh = !!tab.authType
   const isLocal = !isSsh && (tab.type === connectionMap.local || !tab.type)
   const showSshFeatures = isSsh || isLocal
+  const {
+    fileTransfers = [],
+    transferHistory = [],
+    transferTab
+  } = window.store
 
   // ---- sub-renderers ----
 
@@ -97,7 +105,11 @@ export default function SessionControl (props) {
                 onClick={() => onChangePane(types[i])}
               >
                 <span className='type-tab-txt'>
-                  {e(type)}
+                  {
+                    (type === paneMap.ssh || type === paneMap.sftp)
+                      ? type.toUpperCase()
+                      : e(type)
+                  }
                   <span className='type-tab-line' />
                 </span>
               </span>
@@ -251,6 +263,32 @@ export default function SessionControl (props) {
     )
   }
 
+  function renderReloadIcon () {
+    if (!onReload) {
+      return null
+    }
+    return (
+      <Tooltip title='重新载入'>
+        <ReloadOutlined
+          className='sess-icon pointer reload-session-icon'
+          onClick={onReload}
+        />
+      </Tooltip>
+    )
+  }
+
+  function renderTransferIcon () {
+    return (
+      <TransferList
+        variant='session'
+        alwaysShow
+        fileTransfers={fileTransfers}
+        transferHistory={transferHistory}
+        transferTab={transferTab}
+      />
+    )
+  }
+
   function renderSearchIcon () {
     const title = e('search')
     return (
@@ -297,6 +335,8 @@ export default function SessionControl (props) {
         {renderKeepaliveIcon()}
         {renderBroadcastIcon()}
         {renderWrapIcon()}
+        {renderReloadIcon()}
+        {renderTransferIcon()}
         {renderExitGracefullyIcon()}
         {renderTermControls()}
       </div>
@@ -324,6 +364,8 @@ export default function SessionControl (props) {
       {renderKeepaliveIcon()}
       {renderBroadcastIcon()}
       {renderWrapIcon()}
+      {renderReloadIcon()}
+      {renderTransferIcon()}
       {renderExitGracefullyIcon()}
       {renderTermControls()}
     </div>

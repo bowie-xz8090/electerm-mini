@@ -109,6 +109,7 @@ export default function TermInteractiveUI ({
     onOk,
     closable: false,
     open: true,
+    zIndex: 3000,
     title: opts.options?.name || '?',
     footer: null
   }

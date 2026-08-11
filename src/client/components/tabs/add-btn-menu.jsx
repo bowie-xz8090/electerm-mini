@@ -1,21 +1,14 @@
 /**
- * Add button menu component
+ * Add button menu — mini edition
  */
 
 import React, { useCallback, useState } from 'react'
-import { Tabs } from 'antd'
 import {
-  CodeFilled,
-  RightSquareFilled,
-  RobotOutlined
+  PlusCircleOutlined,
+  BookOutlined
 } from '@ant-design/icons'
-import BookmarksList from '../sidebar/bookmark-select'
-import History from '../sidebar/history'
+import BookmarksList from '../sidebar/connection-list'
 import DragHandle from '../common/drag-handle'
-import QuickConnect from './quick-connect'
-import { isAIDisabled } from '../../common/ai-feature'
-
-const e = window.translate
 
 export default function AddBtnMenu ({
   menuRef,
@@ -23,24 +16,13 @@ export default function AddBtnMenu ({
   menuTop,
   menuLeft,
   onMenuScroll,
-  onTabAdd,
   batch,
   addPanelWidth,
-  setAddPanelWidth
+  setAddPanelWidth,
+  onClose
 }) {
-  const { onNewSsh, onNewSshAI } = window.store
-  const [activeTab, setActiveTab] = useState('bookmarks')
+  const [showList, setShowList] = useState(false)
   const cls = 'pd2x pd1y context-item pointer'
-  const addTabBtn = window.store.hasNodePty
-    ? (
-      <div
-        className={cls}
-        onClick={onTabAdd}
-      >
-        <RightSquareFilled /> {e('newTab')}
-      </div>
-      )
-    : null
 
   const onDragEnd = useCallback((nw) => {
     if (setAddPanelWidth) {
@@ -54,6 +36,16 @@ export default function AddBtnMenu ({
     }
   }, [menuRef])
 
+  const handleNewConnection = () => {
+    window.openTabBatch = batch
+    window.store.openConnectionModal()
+    onClose?.()
+  }
+
+  const handleShowList = () => {
+    setShowList(true)
+  }
+
   const dragProps = {
     min: 300,
     max: 600,
@@ -61,24 +53,6 @@ export default function AddBtnMenu ({
     onDragEnd,
     onDragMove,
     left: menuPosition === 'right'
-  }
-
-  const tabItems = [
-    {
-      key: 'bookmarks',
-      label: e('bookmarks')
-    },
-    {
-      key: 'history',
-      label: e('history')
-    }
-  ]
-
-  let listContent
-  if (activeTab === 'bookmarks') {
-    listContent = <BookmarksList store={window.store} autoFocus />
-  } else {
-    listContent = <History store={window.store} />
   }
 
   return (
@@ -99,29 +73,27 @@ export default function AddBtnMenu ({
       <div className='add-menu-header'>
         <div
           className={cls}
-          onClick={onNewSsh}
+          onClick={handleNewConnection}
         >
-          <CodeFilled /> {e('newBookmark')}
+          <PlusCircleOutlined /> 新建连接
         </div>
-        {addTabBtn}
-        {!isAIDisabled() && (
-          <div
-            className={cls}
-            onClick={onNewSshAI}
-          >
-            <RobotOutlined /> {e('createBookmarkByAI')}
-          </div>
-        )}
-        <QuickConnect batch={batch} inputOnly />
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
-        />
+        <div
+          className={cls + (showList ? ' active' : '')}
+          onClick={handleShowList}
+        >
+          <BookOutlined /> 连接列表
+        </div>
       </div>
-      <div className='add-menu-list'>
-        {listContent}
-      </div>
+      {
+        showList
+          ? (
+            <div className='add-menu-list'>
+              <div className='pd1x pd1y bold'>连接列表</div>
+              <BookmarksList store={window.store} autoFocus />
+            </div>
+            )
+          : null
+      }
     </div>
   )
 }

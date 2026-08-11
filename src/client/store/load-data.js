@@ -13,6 +13,7 @@ import { initWsCommon } from '../common/fetch-from-server'
 import safeParse from '../common/parse-json-safe'
 import initWatch from './watch'
 import { parseQuickConnect } from '../common/parse-quick-connect'
+import { MINI_MODE, miniSessionTypes } from '../common/mini-features'
 
 function getHost (argv, opts) {
   const arr = argv
@@ -180,7 +181,7 @@ export default (Store) => {
       for (const s of arr) {
         store.onSelectBookmark(s)
       }
-      if (!arr.length && store.config.initDefaultTabOnStart) {
+      if (!arr.length && store.config.initDefaultTabOnStart && !MINI_MODE) {
         store.initFirstTab()
       }
     }
@@ -217,6 +218,10 @@ export default (Store) => {
     store.isPortable = globs.isPortable
     store._config = globs.config
     window.et.langs = globs.langs
+    // Mini edition: bookmark form / session type radios honor this whitelist
+    if (MINI_MODE) {
+      window.et.supportSessionTypes = [...miniSessionTypes]
+    }
     store.zoom(store.config.zoom, false, true)
     await initWsCommon()
   }

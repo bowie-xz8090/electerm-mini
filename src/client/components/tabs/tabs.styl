@@ -54,9 +54,6 @@
     background var(--main)
   &.active-all
     font-weight bold
-    .tab-count
-      border-radius 15px
-      font-weight bold
   &:hover
     .tab-close
       display block
@@ -86,7 +83,6 @@
 
 .tab-terminal-feed
 .tab-traffic
-.tab-status
   position absolute
   left 2px
   top 2px
@@ -94,18 +90,25 @@
   height 5px
   border-radius 5px
   background-color var(--text-dark)
-  &.success
-    background-color var(--success)
-  &.error
-    background-color var(--error)
-  &.processing
-    background-color var(--primary)
 .tab-traffic
   left 10px
   width 5px
   border-radius 0
   background-color var(--success)
   animation blink 2s infinite
+.tab-status-dot
+  width 10px
+  height 10px
+  border-radius 50%
+  background-color var(--text-dark)
+  vertical-align middle
+  flex-shrink 0
+  &.success
+    background-color var(--success)
+  &.error
+    background-color var(--error)
+  &.processing
+    background-color var(--primary)
 .tab-terminal-feed
   width 12px
   height 12px
@@ -218,12 +221,6 @@
 .tab-title-tag
   margin-right 5px
   font-size 14px
-
-.tab-count
-  border-radius 10px 2px 2px 10px
-  padding 0 4px
-  height 20px
-  line-height 21px
 
 .ssh-tunnel-list-wrapper
   max-height 300px

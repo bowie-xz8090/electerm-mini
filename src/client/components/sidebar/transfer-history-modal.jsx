@@ -60,6 +60,8 @@ export default memo(function TransferHistoryModal (props) {
     title: e('fromPath'),
     dataIndex: 'fromPath',
     key: 'fromPath',
+    ellipsis: true,
+    width: 220,
     render: (txt, inst) => {
       const t = inst.fromPathReal || txt
       return (
@@ -71,6 +73,8 @@ export default memo(function TransferHistoryModal (props) {
     title: e('toPath'),
     dataIndex: 'toPath',
     key: 'toPath',
+    ellipsis: true,
+    width: 220,
     render: (txt, inst) => {
       const t = inst.toPathReal || txt
       return (
@@ -102,10 +106,11 @@ export default memo(function TransferHistoryModal (props) {
       onChange: handlePageSizeChange
     },
     size: 'small',
-    rowKey: 'id'
+    rowKey: 'id',
+    scroll: { x: 900 }
   }
   return (
-    <div className='pd2'>
+    <div className='pd2 transfer-history-panel'>
       <div>
         <span
           className='iblock pointer'

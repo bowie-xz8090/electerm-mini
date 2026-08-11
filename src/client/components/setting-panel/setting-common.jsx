@@ -28,12 +28,10 @@ import defaultSettings from '../../common/default-setting'
 import Link from '../common/external-link'
 import { isNumber, isNaN } from 'lodash-es'
 import createEditLangLink from '../../common/create-lang-edit-link'
-import StartSession from './start-session-select'
 import HelpIcon from '../common/help-icon'
 import delay from '../../common/wait.js'
 import isColorDark from '../../common/is-color-dark'
 import DeepLinkControl from './deep-link-control'
-import HotkeySetting from './hotkey'
 import './setting.styl'
 
 const { Option } = Select
@@ -170,21 +168,7 @@ export default class SettingCommon extends Component {
     })
   }
 
-  onChangeStartSessions = value => {
-    this.onChangeValue(value, 'onStartSessions')
-  }
-
   saveConfig = async (ext) => {
-    const { config } = this.props
-    if (ext.hotkey && ext.hotkey !== config.hotkey) {
-      const res = await window.pre.runGlobalAsync('changeHotkey', ext.hotkey)
-      if (!res) {
-        message.warning(e('hotkeyNotOk'))
-        delete ext.hotkey
-      } else {
-        message.success(e('saved'))
-      }
-    }
     this.props.store.setConfig(ext)
   }
 
@@ -448,7 +432,6 @@ export default class SettingCommon extends Component {
     }
     const { props } = this
     const {
-      hotkey,
       language,
       theme,
       customCss
@@ -457,29 +440,9 @@ export default class SettingCommon extends Component {
       langs = []
     } = window.et
     const terminalThemes = props.store.getSidebarList(settingMap.terminalThemes)
-    const pops = {
-      onStartSessions: props.config.onStartSessions,
-      bookmarks: props.bookmarks,
-      bookmarkGroups: props.bookmarkGroups,
-      workspaces: props.store.workspaces,
-      onChangeStartSessions: this.onChangeStartSessions
-    }
-    const hotkeyProps = {
-      hotkey,
-      onSaveConfig: this.saveConfig
-    }
     return (
       <div className='form-wrap pd1y pd2x'>
         <h2>{e('settings')}</h2>
-        <HotkeySetting
-          {...hotkeyProps}
-        />
-        <div className='pd1b'>{e('onStartBookmarks')}</div>
-        <div className='pd2b'>
-          <StartSession
-            {...pops}
-          />
-        </div>
         {this.renderProxy()}
         {
           this.renderNumber('sshReadyTimeout', {

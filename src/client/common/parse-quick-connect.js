@@ -19,7 +19,13 @@
  * 192.168.1.100:22
  */
 
-const SUPPORTED_PROTOCOLS = ['ssh', 'telnet', 'vnc', 'rdp', 'spice', 'serial', 'ftp', 'http', 'https', 'electerm']
+import { MINI_MODE } from './mini-features'
+
+const ALL_PROTOCOLS = ['ssh', 'telnet', 'vnc', 'rdp', 'spice', 'serial', 'ftp', 'http', 'https', 'electerm']
+/** Mini edition: SSH (+ electerm:// defaulting to ssh) only */
+const SUPPORTED_PROTOCOLS = MINI_MODE
+  ? ['ssh', 'electerm']
+  : ALL_PROTOCOLS
 
 /**
  * Deny list for opts keys - these are parsed from the URL itself

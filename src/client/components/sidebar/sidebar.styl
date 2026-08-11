@@ -10,6 +10,7 @@
   width 0
   overflow-y scroll
   background var(--main)
+  border 1px solid rgba(255, 255, 255, 0.35)
   .item-list-unit:hover
     .list-item-remove
       display none !important
@@ -31,13 +32,13 @@
   left 0
   right 0
   top 0
-  height 112px
+  height 40px
 .sidebar-panel-bookmarks
 .sidebar-panel-history
   position absolute
   left 0
   right 0
-  top 112px
+  top 40px
   bottom 0
   overflow hidden
   display flex
@@ -48,6 +49,7 @@
     flex-direction column
     overflow hidden
     min-height 0
+    overflow-y auto
   .history-header
     flex-shrink 0
     display flex

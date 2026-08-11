@@ -15,7 +15,6 @@ import {
 } from '../../common/constants'
 import copy from 'json-deep-copy'
 import generate from '../../common/uid'
-import runIdle from '../../common/run-idle'
 import getInitItem from '../../common/init-setting-item'
 import testCon from '../../common/test-connection'
 import newTerm from '../../common/new-terminal'
@@ -23,27 +22,60 @@ import { isValidIP } from '../../common/is-ip'
 import { action as manateAction } from 'manate'
 
 export default function FormRenderer ({ config, props }) {
-  const initialValues = config.initValues(props)
   const [form] = Form.useForm()
   const [ips, setIps] = useState([])
-  const [authType, setAuthType] = useState(initialValues.authType || authTypeMap.password)
   const [testing, setTesting] = useState(false)
   const action = useRef('submit')
 
+  let initError = null
+  let initialValues = {}
+  if (!config || typeof config.initValues !== 'function') {
+    initError = '连接表单配置缺失，请刷新后重试'
+  } else {
+    try {
+      initialValues = config.initValues(props) || {}
+    } catch (err) {
+      console.error('connection form initValues failed', err)
+      initError = '连接表单初始化失败：' + String(err.message || err)
+    }
+  }
+  const [authType, setAuthType] = useState(initialValues.authType || authTypeMap.password)
+
   useEffect(() => {
-    const init = config.initValues(props)
-    form.resetFields()
-    form.setFieldsValue(init)
+    if (!config || typeof config.initValues !== 'function') {
+      return
+    }
+    try {
+      const init = config.initValues(props)
+      form.resetFields()
+      form.setFieldsValue(init)
+    } catch (err) {
+      console.error('connection form reset failed', err)
+    }
   }, [
     props.currentBookmarkGroupId,
     props.formData?.id,
-    config.key
+    config?.key
   ])
 
   const updateBookmarkGroups = manateAction((bookmark, categoryId) => {
-    const {
+    const { store } = window
+    let {
       bookmarkGroups
-    } = window.store
+    } = store
+    // Ensure groups are real objects (legacy bug stored JSON strings)
+    bookmarkGroups = bookmarkGroups.map(bg => {
+      if (typeof bg === 'string') {
+        try {
+          return JSON.parse(bg)
+        } catch (e) {
+          return null
+        }
+      }
+      return bg
+    }).filter(Boolean)
+    store.bookmarkGroups = bookmarkGroups
+
     let index = bookmarkGroups.findIndex(
       bg => bg.id === categoryId
     )
@@ -52,27 +84,47 @@ export default function FormRenderer ({ config, props }) {
         bg => bg.id === defaultBookmarkGroupId
       )
     }
+    if (index < 0) {
+      bookmarkGroups.push({
+        title: 'default',
+        id: defaultBookmarkGroupId,
+        bookmarkIds: [],
+        bookmarkGroupIds: []
+      })
+      index = bookmarkGroups.length - 1
+    }
     const bid = bookmark.id
     const bg = bookmarkGroups[index]
+    if (!Array.isArray(bg.bookmarkIds)) {
+      bg.bookmarkIds = []
+    }
     if (!bg.bookmarkIds.includes(bid)) {
       bg.bookmarkIds.unshift(bid)
     }
     bg.bookmarkIds = uniq(bg.bookmarkIds)
-    bookmarkGroups.forEach((bg, i) => {
-      if (i === index) {
-        return bg
+    bookmarkGroups.forEach((g, i) => {
+      if (i === index || !Array.isArray(g.bookmarkIds)) {
+        return
       }
-      bg.bookmarkIds = bg.bookmarkIds.filter(
-        g => g !== bid
+      g.bookmarkIds = g.bookmarkIds.filter(
+        id => id !== bid
       )
-      return bg
     })
-    message.success('OK', 3)
   })
 
   const setNewItem = (settingItem = getInitItem([], settingMap.bookmarks)) => {
     const { store } = props
     store.setSettingItem(settingItem)
+    if (store.connectionModalVisible) {
+      store.connectionFormItem = settingItem
+    }
+  }
+
+  const refreshBookmarksMap = () => {
+    const { store } = window
+    store.bookmarksMap = new Map(
+      (store.bookmarks || []).map(d => [d.id, d])
+    )
   }
 
   const submit = (evt, item, type = props.type) => {
@@ -84,14 +136,16 @@ export default function FormRenderer ({ config, props }) {
       obj.hasHopping = true
     }
     const { addItem, editItem } = props.store
-    const categoryId = obj.category
+    const categoryId = obj.category ||
+      props.store.currentBookmarkGroupId ||
+      defaultBookmarkGroupId
     delete obj.category
-    if (!obj.id.startsWith(newBookmarkIdPrefix)) {
+    const isNew = !obj.id || String(obj.id).startsWith(newBookmarkIdPrefix)
+    if (!isNew) {
       const tar = copy(obj)
       delete tar.id
-      runIdle(() => {
-        editItem(obj.id, tar, settingMap.bookmarks)
-      })
+      editItem(obj.id, tar, settingMap.bookmarks)
+      refreshBookmarksMap()
       updateBookmarkGroups(
         obj,
         categoryId
@@ -101,17 +155,21 @@ export default function FormRenderer ({ config, props }) {
       }
     } else {
       obj.id = generate()
-      runIdle(() => {
-        addItem(obj, settingMap.bookmarks)
-      })
+      addItem(copy(obj), settingMap.bookmarks)
+      refreshBookmarksMap()
       updateBookmarkGroups(
         obj,
         categoryId
       )
-      setNewItem(evt === 'saveAndCreateNew'
-        ? getInitItem([], settingMap.bookmarks)
-        : obj
-      )
+      // Keep default group expanded so the new connection is visible
+      if (!props.store.expandedKeys.includes(categoryId)) {
+        props.store.expandedKeys.push(categoryId)
+      }
+      if (evt === 'saveAndCreateNew') {
+        setNewItem()
+      } else if (!props.store.connectionModalVisible) {
+        setNewItem(obj)
+      }
     }
   }
 
@@ -154,9 +212,23 @@ export default function FormRenderer ({ config, props }) {
     if (res.enableSsh === false && res.enableSftp === false) {
       return message.warning('SSH and SFTP all disabled')
     }
+    // Include unregistered initial values (e.g. category) from the form store
+    const allValues = form.getFieldsValue(true)
+    const formDataId = props.formData?.id
     const obj = {
       ...props.formData,
+      ...allValues,
       ...res
+    }
+    // Never let empty/missing id wipe the new-bookmark prefix from formData
+    if (!obj.id || obj.id === '') {
+      obj.id = formDataId || (newBookmarkIdPrefix + ':' + Date.now())
+    }
+    if (!obj.type) {
+      obj.type = 'ssh'
+    }
+    if (!obj.category) {
+      obj.category = props.store.currentBookmarkGroupId || defaultBookmarkGroupId
     }
     if (!obj.terminalBackground?.terminalBackgroundImagePath) {
       delete obj.terminalBackground
@@ -166,6 +238,10 @@ export default function FormRenderer ({ config, props }) {
     }
     if (evt && evt !== 'connect') {
       submit(evt, obj)
+    }
+    if (evt === 'save') {
+      props.hide?.()
+      return
     }
     if (evt !== 'save' && evt !== 'saveAndCreateNew') {
       window.store.currentLayoutBatch = window.openTabBatch || 0
@@ -197,6 +273,11 @@ export default function FormRenderer ({ config, props }) {
 
   const connect = () => {
     action.current = 'connect'
+    form.submit()
+  }
+
+  const saveAndConnect = () => {
+    action.current = 'submit'
     form.submit()
   }
 
@@ -286,6 +367,12 @@ export default function FormRenderer ({ config, props }) {
     useIp
   }
 
+  if (initError) {
+    return (
+      <div className='pd2'>{initError}</div>
+    )
+  }
+
   const tabs = typeof config.tabs === 'function' ? (config.tabs() || []) : (config.tabs || [])
   let content = null
 
@@ -311,7 +398,7 @@ export default function FormRenderer ({ config, props }) {
     }))
     content = <Tabs items={items} />
   }
-  const formName = `${config.key}-form`
+  const formName = `${config.key || 'ssh'}-form`
   return (
     <Form
       form={form}
@@ -321,9 +408,8 @@ export default function FormRenderer ({ config, props }) {
     >
       {content}
       <SubmitButtons
-        onSave={save}
-        onSaveAndCreateNew={saveAndCreateNew}
         onConnect={connect}
+        onSaveAndConnect={saveAndConnect}
         onTestConnection={testConnection}
       />
     </Form>

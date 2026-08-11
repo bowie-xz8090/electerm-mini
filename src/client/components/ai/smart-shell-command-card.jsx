@@ -123,7 +123,7 @@ export default function SmartShellCommandCard ({ item }) {
       <Alert
         type={status === 'executed' ? 'success' : status === 'rejected' ? 'warning' : 'info'}
         showIcon
-        message={proposal.message || item.response || 'Command proposal'}
+        title={proposal.message || item.response || 'Command proposal'}
       />
       <Flex className='smart-shell-meta mg1t' align='center' gap={6} wrap>
         <Tag color='purple'>

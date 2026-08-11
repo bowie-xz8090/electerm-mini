@@ -6,13 +6,8 @@ import {
 import { InfoCircleOutlined, TranslationOutlined, DoubleRightOutlined } from '@ant-design/icons'
 import './footer.styl'
 import { statusMap } from '../../common/constants'
-import BatchInput from './batch-input'
 import encodes from '../bookmark-form/common/encodes'
 import { refs } from '../common/ref'
-import Qm from '../quick-commands/quick-commands-select'
-import AIIcon from '../icons/ai-icon'
-import { isAIDisabled } from '../../common/ai-feature'
-import CmdHistory from './cmd-history'
 
 const {
   Option
@@ -23,14 +18,6 @@ const e = window.translate
 export default auto(function FooterEntry (props) {
   function handleInfoPanel () {
     window.store.openInfoPanel()
-  }
-
-  function batchInput (cmd, selectedTabIds) {
-    selectedTabIds.map(id => {
-      return refs.get('term-' + id)
-    }).forEach(term => {
-      term?.batchInput(cmd)
-    })
   }
 
   function handleSwitchEncoding (encode) {
@@ -49,42 +36,6 @@ export default auto(function FooterEntry (props) {
       status
     } = currentTab
     return status !== statusMap.success
-  }
-
-  function renderBatchInputs () {
-    const { store } = props
-    const batchProps = {
-      input: batchInput,
-      tabs: store.tabs,
-      batchInputSelectedTabIds: store.batchInputSelectedTabIds,
-      activeTabId: store.activeTabId,
-      isMobile: store.isMobile
-    }
-    return (
-      <div className='terminal-footer-unit terminal-footer-center'>
-        <BatchInput
-          {...batchProps}
-        />
-      </div>
-    )
-  }
-
-  function renderQuickCommands () {
-    return (
-      <div className='terminal-footer-unit terminal-footer-qm'>
-        <Qm />
-      </div>
-    )
-  }
-
-  function renderAIIcon () {
-    return (
-      <div className='terminal-footer-unit terminal-footer-ai'>
-        <AIIcon
-          onClick={window.store.handleOpenAIPanel}
-        />
-      </div>
-    )
   }
 
   function renderEncodingInfo () {
@@ -156,14 +107,6 @@ export default auto(function FooterEntry (props) {
     )
   }
 
-  function renderCmdHistory () {
-    return (
-      <div className='terminal-footer-unit terminal-footer-history'>
-        <CmdHistory store={props.store} />
-      </div>
-    )
-  }
-
   function handleShowSidebar () {
     window.store.toggleLeftSideBar()
   }
@@ -210,10 +153,6 @@ export default auto(function FooterEntry (props) {
     <div {...sideProps}>
       <div className='terminal-footer-flex'>
         {showSidebarIcon}
-        {!isAIDisabled() && renderAIIcon()}
-        {renderCmdHistory()}
-        {renderQuickCommands()}
-        {renderBatchInputs()}
         {renderEncodingInfo()}
         {renderInfoIcon()}
       </div>

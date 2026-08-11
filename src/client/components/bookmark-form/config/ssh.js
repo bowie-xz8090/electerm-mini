@@ -1,11 +1,28 @@
-// SSH config using common fields
+// SSH config — mini edition essentials
 import { formItemLayout } from '../../../common/form-layout.js'
 import { connectionMap, authTypeMap, defaultEnvLang } from '../../../common/constants.js'
 import defaultSetting from '../../../common/default-setting.js'
 import { createBaseInitValues, getTerminalDefaults, getSshDefaults, getTerminalBackgroundDefaults, getAuthTypeDefault } from '../common/init-values.js'
-import { sshAuthFields, sshSettings, quickCommandsTab, sshTunnelTab, connectionHoppingTab } from './common-fields.js'
+import { commonFields } from './common-fields.js'
 
 const e = window.translate
+
+const miniSshAuthFields = [
+  commonFields.title,
+  { ...commonFields.host, type: 'sshHostSelector' },
+  commonFields.username,
+  { type: 'sshAuthTypeSelector', name: 'authType', label: '' },
+  { type: 'sshAuthSelector', name: '__auth__', label: '', formItemName: 'password' },
+  commonFields.port,
+  {
+    type: 'switch',
+    name: 'enableSftp',
+    label: 'SFTP',
+    valuePropName: 'checked'
+  },
+  commonFields.description,
+  commonFields.type
+]
 
 const sshConfig = {
   key: connectionMap.ssh,
@@ -15,8 +32,8 @@ const sshConfig = {
     return createBaseInitValues(props, connectionMap.ssh, {
       port: 22,
       authType: authTypeMap.password,
-      id: '',
       envLang: defaultEnvLang,
+      enableSsh: true,
       enableSftp: true,
       sshTunnels: [],
       connectionHoppings: [],
@@ -35,17 +52,9 @@ const sshConfig = {
   tabs: () => [
     {
       key: 'auth',
-      label: e('auth'),
-      fields: sshAuthFields
-    },
-    {
-      key: 'settings',
-      label: e('settings'),
-      fields: sshSettings
-    },
-    quickCommandsTab(),
-    sshTunnelTab(),
-    connectionHoppingTab()
+      label: e('auth') || '连接',
+      fields: miniSshAuthFields
+    }
   ]
 }
 export default sshConfig

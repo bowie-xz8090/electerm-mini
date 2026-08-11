@@ -1,3 +1,5 @@
+import React from 'react'
+
 export default function LayoutItem (props) {
   const {
     children,
@@ -23,14 +25,23 @@ export default function LayoutItem (props) {
       }
       currentElement = currentElement.parentElement
     }
-    const fromTab = JSON.parse(e.dataTransfer.getData('fromFile'))
+    const fromRaw = e.dataTransfer.getData('fromFile')
+    if (!fromRaw) {
+      return
+    }
+    let fromTab
+    try {
+      fromTab = JSON.parse(fromRaw)
+    } catch (err) {
+      return
+    }
     const onDropElem = getDom()
     if (!onDropElem || !fromTab || fromTab.batch === batch) {
       return
     }
     const { store } = window
     const { tabs } = store
-    const t = tabs.find(t => t.id === fromTab.id)
+    const t = tabs.find(tab => tab.id === fromTab.id)
     if (!t) {
       return
     }

@@ -5,7 +5,7 @@ const { resolve: pathResolve } = require('path')
 const fs = require('fs')
 const { randomBytes } = require('crypto')
 
-const appDataPath = process.env.DATA_PATH || pathResolve(appPath, 'electerm')
+const appDataPath = process.env.DATA_PATH || pathResolve(appPath, require('../common/mini-identity').dataDirName)
 const keyFilePath = pathResolve(appDataPath, 'users', defaultUserName, 'storage-key.enc')
 
 let _cachedStorageKey = null

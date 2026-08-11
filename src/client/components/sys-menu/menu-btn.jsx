@@ -18,10 +18,6 @@ class MenuBtn extends PureComponent {
     refsStatic.add('menu-btn', this)
   }
 
-  onNewSsh = () => {
-    window.store.onNewSsh()
-  }
-
   addTab = () => {
     window.store.addTab()
   }
@@ -63,14 +59,7 @@ class MenuBtn extends PureComponent {
   }
 
   renderContext = () => {
-    const items = [
-      {
-        func: 'onNewSsh',
-        icon: 'CodeFilled',
-        text: e('newBookmark'),
-        subText: this.getShortcut('app_newBookmark')
-      }
-    ]
+    const items = []
     if (window.store.hasNodePty) {
       items.push({
         func: 'addTab',
@@ -79,15 +68,6 @@ class MenuBtn extends PureComponent {
         subText: this.getShortcut('app_newTab')
       })
     }
-    // {
-    //   type: 'hr'
-    // },
-    items.push({
-      noCloseMenu: true,
-      icon: 'BookOutlined',
-      text: e('bookmarks'),
-      submenu: 'Bookmark'
-    })
     items.push(
       {
         noCloseMenu: true,
@@ -106,9 +86,6 @@ class MenuBtn extends PureComponent {
         text: e('layout'),
         submenu: 'Layout'
       },
-      // {
-      //   type: 'hr'
-      // },
       {
         func: 'openAbout',
         icon: 'InfoCircleOutlined',
@@ -124,9 +101,6 @@ class MenuBtn extends PureComponent {
         icon: 'LeftSquareFilled',
         text: e('toggledevtools')
       },
-      // {
-      //   type: 'hr'
-      // },
       {
         module: 'Zoom'
       },
@@ -145,17 +119,11 @@ class MenuBtn extends PureComponent {
         icon: 'ReloadOutlined',
         text: e('reload')
       },
-      // {
-      //   type: 'hr'
-      // },
       {
         func: 'onCheckUpdate',
         icon: 'UpCircleOutlined',
         text: e('checkForUpdate')
       },
-      // {
-      //   type: 'hr'
-      // },
       {
         func: 'restart',
         icon: 'RedoOutlined',

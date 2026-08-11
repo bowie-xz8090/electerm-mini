@@ -36,12 +36,13 @@ const e = window.translate
 
 function getDefaultBookmarkGroups (bookmarks) {
   return [
-    JSON.stringify({
+    {
       title: e(defaultBookmarkGroupId),
       id: defaultBookmarkGroupId,
       bookmarkIds: bookmarks.map(d => d.id),
+      bookmarkGroupIds: [],
       color: getRandomDefaultColor()
-    })
+    }
   ]
 }
 
@@ -130,10 +131,12 @@ export default () => {
     rightPanelPinned: false,
     _rightPanelWidth: parseInt(ls.getItem(rightSidebarWidthKey), 10) || 500,
     showAIConfigModal: false,
+    connectionModalVisible: false,
+    connectionFormItem: null,
 
     // for settings related
-    settingItem: initSettingItem([], settingMap.bookmarks),
-    settingTab: settingMap.bookmarks, // setting tab
+    settingItem: initSettingItem([], settingMap.setting),
+    settingTab: settingMap.setting, // setting tab
     bookmarkId: undefined,
     showModal: 0,
 
@@ -168,7 +171,10 @@ export default () => {
     qmSortByFrequency: ls.getItem(qmSortByFrequencyKey) === 'yes',
 
     // sidebar
-    openedSideBar: ls.getItem(openedSidebarKey) || '',
+    openedSideBar: (() => {
+      const v = ls.getItem(openedSidebarKey) || ''
+      return v === 'bookmarks' ? '' : v
+    })(),
     _leftSidePanelWidth: parseInt(ls.getItem(leftSidePanelWidthKey), 10) || 300,
     // whether the far-left icon bar is open (hide/show works on every platform)
     _leftSideBarOpen: leftSideBarOpen,
@@ -203,9 +209,9 @@ export default () => {
     // batch inputs
     batchInputs: ls.getItemJSON(batchInputLsKey, []),
 
-    // ui
+    // ui — 必须用真实窗口尺寸初始化，否则首屏会按 height:500 布局，出现短暂“半窗”
     innerWidth: window.innerWidth,
-    height: 500,
+    height: window.innerHeight,
     isMaximized: window.pre.runSync('isMaximized'),
     hasNodePty: window.pre.runSync('nodePtyCheck'),
     isMobile: window.innerWidth <= mobileBreakpoint,

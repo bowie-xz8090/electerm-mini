@@ -49,9 +49,13 @@ export default class Sftp extends Component {
       ...this.defaultState(),
       loadingSftp: false,
       inited: false,
-      ready: false
+      ready: false,
+      splitPercent: 50,
+      splitting: false
     }
     this.retryCount = 0
+    this._remoteListToken = 0
+    this.splitWrapRef = null
   }
 
   componentDidMount () {
@@ -77,6 +81,18 @@ export default class Sftp extends Component {
       this.onGoto(typeMap.local)
       this.onGoto(typeMap.remote)
     }
+    // 切到 SFTP 时若尚未初始化（SSH 连上时 SFTP 可能还没挂上），补一次初始化
+    if (
+      prevProps.pane !== this.props.pane &&
+      this.props.pane === paneMap.fileManager &&
+      !this.sftp &&
+      !this.state.remoteLoading
+    ) {
+      const port = this.getSessionPort()
+      if (port) {
+        this.initData(this.props.tab.id, port)
+      }
+    }
     if (
       prevState.remotePath !== this.state.remotePath &&
       this.state.selectedType === typeMap.remote
@@ -101,6 +117,8 @@ export default class Sftp extends Component {
   }
 
   componentWillUnmount () {
+    this._remoteListToken += 1
+    this.stopSplitDrag(true)
     refs.remove(this.id)
     this.sftp && this.sftp.destroy()
     this.sftp = null
@@ -536,12 +554,34 @@ export default class Sftp extends Component {
   }
 
   initData = (terminalId, port) => {
-    this.terminalId = terminalId
-    this.port = port
+    const nextId = terminalId || this.props.tab?.id
+    const nextPort = port || this.getSessionPort()
+    // SSH 重连后 session port/terminalId 会变，旧 sftp ws 已失效，必须重建
+    if (
+      this.sftp &&
+      (this.port !== nextPort || this.terminalId !== nextId)
+    ) {
+      try {
+        this.sftp.destroy()
+      } catch (e) {
+        console.debug('destroy stale sftp failed', e)
+      }
+      this.sftp = null
+    }
+    this.terminalId = nextId
+    this.port = nextPort
     if (this.shouldRenderRemote()) {
       this.initRemoteAll()
     }
     this.initLocalAll()
+  }
+
+  getSessionPort = () => {
+    const term = refs.get('term-' + this.props.tab.id)
+    if (term?.port) {
+      return term.port
+    }
+    return this.port
   }
 
   shouldRenderRemote = () => {
@@ -666,7 +706,7 @@ export default class Sftp extends Component {
   }
 
   sftpList = (sftp, remotePath) => {
-    return sftp.list(remotePath)
+    const listPromise = sftp.list(remotePath)
       .then(arr => {
         return arr.map(item => {
           const { type } = item
@@ -683,6 +723,13 @@ export default class Sftp extends Component {
           }
         })
       })
+    // 失效 ws 上 list 可能永不返回，超时后抛错以便清 loading / 重建连接
+    return Promise.race([
+      listPromise,
+      wait(30000).then(() => {
+        throw new Error('sftp list timeout')
+      })
+    ])
   }
 
   remoteList = async (
@@ -697,6 +744,7 @@ export default class Sftp extends Component {
     if (noPathInit) {
       remotePath = noPathInit
     }
+    const listToken = ++this._remoteListToken
     if (!returnList) {
       this.setState({
         remoteLoading: true
@@ -705,11 +753,44 @@ export default class Sftp extends Component {
     const oldRemote = deepCopy(
       this.state.remote
     )
+    // 终端已换 port 但 UI 还握着旧 sftp 时，先丢掉再重建
+    const livePort = this.getSessionPort()
+    if (
+      this.sftp &&
+      livePort &&
+      this.port &&
+      this.port !== livePort
+    ) {
+      try {
+        this.sftp.destroy()
+      } catch (e) {}
+      this.sftp = null
+    }
+    if (livePort) {
+      this.port = livePort
+    }
     let sftp = this.sftp
     try {
       if (!this.sftp) {
-        sftp = await Client(this.terminalId, this.type, this.port)
+        const sessionPort = this.port || this.getSessionPort()
+        if (!sessionPort) {
+          this.setState({
+            remoteLoading: false,
+            loadingSftp: false
+          })
+          return
+        }
+        this.port = sessionPort
+        sftp = await Client(this.terminalId || this.props.tab.id, this.type, sessionPort)
+        if (listToken !== this._remoteListToken) {
+          try { sftp?.destroy() } catch (e) {}
+          return
+        }
         if (!sftp) {
+          this.setState({
+            remoteLoading: false,
+            loadingSftp: false
+          })
           return
         }
         const config = deepCopy(
@@ -721,7 +802,7 @@ export default class Sftp extends Component {
         const opts = deepCopy({
           ...tab,
           readyTimeout: config.sshReadyTimeout,
-          terminalId: this.terminalId,
+          terminalId: this.terminalId || this.props.tab.id,
           keepaliveInterval: config.keepaliveInterval,
           proxy: getProxy(tab, config),
           ...sessionOptions
@@ -734,7 +815,8 @@ export default class Sftp extends Component {
             ) {
               this.retryHandler = setTimeout(
                 () => this.initData(
-                  true
+                  this.props.tab.id,
+                  this.getSessionPort()
                 ),
                 sftpRetryInterval
               )
@@ -743,6 +825,10 @@ export default class Sftp extends Component {
               throw e
             }
           })
+        if (listToken !== this._remoteListToken) {
+          try { sftp.destroy() } catch (e) {}
+          return
+        }
         this.setState(() => {
           return {
             loadingSftp: false
@@ -750,6 +836,9 @@ export default class Sftp extends Component {
         })
         if (!r) {
           sftp.destroy()
+          this.setState({
+            remoteLoading: false
+          })
           return this.props.editTab(tab.id, {
             sftpCreated: false
           })
@@ -765,8 +854,14 @@ export default class Sftp extends Component {
           remotePath = await this.getPwd(username)
         }
       }
+      if (listToken !== this._remoteListToken) {
+        return
+      }
 
       const remote = await this.sftpList(sftp, remotePath)
+      if (listToken !== this._remoteListToken) {
+        return
+      }
       this.sftp = sftp
       const update = {
         remote,
@@ -798,6 +893,16 @@ export default class Sftp extends Component {
         })
       })
     } catch (e) {
+      if (listToken !== this._remoteListToken) {
+        return
+      }
+      // 失效连接上 list/connect 会挂起或抛错：丢掉旧 sftp，允许下次重建
+      if (this.sftp === sftp) {
+        try {
+          this.sftp.destroy()
+        } catch (err) {}
+        this.sftp = null
+      }
       const update = {
         remoteLoading: false,
         remote: oldRemote,
@@ -943,6 +1048,16 @@ export default class Sftp extends Component {
       this.sftp.destroy()
       this.sftp = null
     }
+    const port = this.getSessionPort()
+    if (!port) {
+      this.setState({
+        remoteLoading: false,
+        loadingSftp: false
+      })
+      return
+    }
+    this.port = port
+    this.terminalId = this.terminalId || this.props.tab.id
     this.setState({
       remoteLoading: true,
       remote: [],
@@ -1000,7 +1115,7 @@ export default class Sftp extends Component {
   onGoto = async (type, e) => {
     e && e.preventDefault()
     if (type === typeMap.remote && !this.sftp) {
-      return this.initData(true)
+      return this.initData(this.props.tab.id, this.getSessionPort())
     }
     const n = `${type}Path`
     const nt = n + 'Temp'
@@ -1274,7 +1389,6 @@ export default class Sftp extends Component {
         className={`sftp-section sftp-${type}-section tw-${type}`}
         style={style}
         key={type}
-        {...style}
       >
         <Spin spinning={loading}>
           <div className='pd1 sftp-panel'>
@@ -1297,37 +1411,96 @@ export default class Sftp extends Component {
     )
   }
 
+  stopSplitDrag = (unmounting = false) => {
+    if (this._onSplitMove) {
+      document.removeEventListener('mousemove', this._onSplitMove)
+      this._onSplitMove = null
+    }
+    if (this._onSplitUp) {
+      document.removeEventListener('mouseup', this._onSplitUp)
+      this._onSplitUp = null
+    }
+    document.body.classList.remove('sftp-splitting')
+    if (!unmounting && this.state.splitting) {
+      this.setState({ splitting: false })
+    }
+  }
+
+  onSplitMouseDown = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const wrap = this.splitWrapRef
+    if (!wrap) {
+      return
+    }
+    this.setState({ splitting: true })
+    document.body.classList.add('sftp-splitting')
+    this._onSplitMove = (ev) => {
+      const rect = wrap.getBoundingClientRect()
+      if (!rect.width) {
+        return
+      }
+      let percent = ((ev.clientX - rect.left) / rect.width) * 100
+      percent = Math.min(80, Math.max(20, percent))
+      this.setState({ splitPercent: percent })
+    }
+    this._onSplitUp = () => {
+      this.stopSplitDrag()
+    }
+    document.addEventListener('mousemove', this._onSplitMove)
+    document.addEventListener('mouseup', this._onSplitUp)
+  }
+
+  renderSplitHandle () {
+    return (
+      <div
+        className={classnames('sftp-split-handle', {
+          active: this.state.splitting
+        })}
+        title='拖动调整本地/远程宽度'
+        onMouseDown={this.onSplitMouseDown}
+      />
+    )
+  }
+
   renderSections () {
     if (!this.isActive()) {
       return null
     }
-    const arr = [
-      typeMap.local,
-      typeMap.remote
-    ]
     const {
       height, width
     } = this.props
     const shouldRenderRemote = this.shouldRenderRemote()
     if (!shouldRenderRemote) {
       return (
-        this.renderSection(arr[0], {
-          width,
-          left: 0,
-          top: 0,
+        this.renderSection(typeMap.local, {
+          width: '100%',
           height
         }, width)
       )
     }
-    return arr.map((t, i) => {
-      const style = {
-        width: width / 2,
-        left: i * width / 2,
-        top: 0,
-        height
-      }
-      return this.renderSection(t, style, width / 2)
-    })
+    const splitPercent = this.state.splitPercent || 50
+    const localWidth = Math.floor(width * splitPercent / 100)
+    const remoteWidth = Math.max(0, width - localWidth - 8)
+    return (
+      <>
+        {
+          this.renderSection(typeMap.local, {
+            width: `calc(${splitPercent}% - 4px)`,
+            height,
+            flex: `0 0 calc(${splitPercent}% - 4px)`
+          }, localWidth)
+        }
+        {this.renderSplitHandle()}
+        {
+          this.renderSection(typeMap.remote, {
+            width: `calc(${100 - splitPercent}% - 4px)`,
+            height,
+            flex: `0 0 calc(${100 - splitPercent}% - 4px)`
+          }, remoteWidth)
+        }
+      </>
+    )
   }
 
   render () {
@@ -1344,9 +1517,14 @@ export default class Sftp extends Component {
     }
     const { height } = this.props
     const all = {
-      className: 'sftp-wrap overhide relative',
+      className: classnames('sftp-wrap overhide relative', {
+        splitting: this.state.splitting
+      }),
       id: `id-${id}`,
-      style: { height }
+      style: { height },
+      ref: (el) => {
+        this.splitWrapRef = el
+      }
     }
     return (
       <div

@@ -25,6 +25,10 @@ CONTRIBUTORS
 *.coffee
 *.d.cts
 *.d.mts
+*.iobj
+*.ipdb
+*.pdb
+*.tlog
 tsconfig.json
 .nycrc
 .nycrc.json

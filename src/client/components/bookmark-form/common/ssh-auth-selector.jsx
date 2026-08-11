@@ -4,12 +4,10 @@
 import {
   Button,
   Input,
-  AutoComplete,
   Form,
   Select
 } from 'antd'
 import { formItemLayout } from '../../../common/form-layout'
-import { uniqBy } from 'lodash-es'
 import Password from '../../common/password'
 import Upload from '../../common/upload'
 
@@ -64,36 +62,16 @@ export default function renderAuth (props) {
     </FormItem>
   )
   if (authType === 'password') {
-    const opts = {
-      options: uniqBy(
-        store.bookmarks
-          .filter(d => d.password),
-        (d) => d.password
-      )
-        .map(d => {
-          return {
-            label: `${d.title ? `(${d.title})` : ''}${d.username || ''}:${d.host}-******`,
-            value: d.password
-          }
-        }),
-      placeholder: e('password'),
-      allowClear: false
-    }
     return (
       <FormItem
         {...formItemLayout}
         label={e('password')}
         name={formItemName}
-        hasFeedback
         rules={[{
           max: 1024, message: '1024 chars max'
         }]}
       >
-        <AutoComplete
-          {...opts}
-        >
-          <Password />
-        </AutoComplete>
+        <Password placeholder={e('password')} />
       </FormItem>
     )
   }

@@ -1,40 +1,28 @@
 /**
- * Common submit buttons component for bookmark forms
- * Provides save, connect, and test functionality
+ * Common submit buttons for connection forms (mini edition)
  */
 import React from 'react'
 import { Button, Form } from 'antd'
 import { tailFormItemLayout } from '../../../common/form-layout'
 
 const FormItem = Form.Item
-const e = window.translate
 
 export default function SubmitButtons ({
-  onSave,
-  onSaveAndCreateNew,
   onConnect,
-  onTestConnection,
-  onSaveAndConnect
+  onSaveAndConnect,
+  onTestConnection
 }) {
   return (
     <FormItem {...tailFormItemLayout}>
       <p>
-        <Button type='primary' htmlType='submit' className='mg1r mg1b'>
-          {e('saveAndConnect')}
-        </Button>
-        <Button type='primary' className='mg1r mg1b' onClick={onSaveAndCreateNew}>
-          {e('saveAndCreateNew')}
-        </Button>
-        <Button type='dashed' className='mg1r mg1b' onClick={onSave}>
-          {e('save')}
-        </Button>
-      </p>
-      <p>
         <Button type='dashed' onClick={onConnect} className='mg1r mg1b'>
-          {e('connect')}
+          直接连接
+        </Button>
+        <Button type='primary' onClick={onSaveAndConnect} className='mg1r mg1b'>
+          保存并连接
         </Button>
         <Button type='dashed' onClick={onTestConnection} className='mg1r mg1b'>
-          {e('testConnection')}
+          测试连接
         </Button>
       </p>
     </FormItem>

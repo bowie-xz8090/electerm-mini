@@ -331,10 +331,10 @@ export function shortcutExtend (Cls) {
 
 export function shortcutDescExtend (Cls) {
   Cls.prototype.getShortcut = function (name) {
-    const shortcutsConfig = buildConfigForSearch(this.props.config)
+    const shortcutsConfig = buildConfigForSearch(this.props.config || {})
     const propName = isMacJs ? 'shortcutMac' : 'shortcut'
     const n = `${name}_${propName}`
-    return shortcutsConfig[n].shortcut
+    return shortcutsConfig[n]?.shortcut || ''
   }
   return Cls
 }

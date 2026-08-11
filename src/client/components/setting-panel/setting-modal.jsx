@@ -1,5 +1,6 @@
 /**
- * hisotry/bookmark/setting modal
+ * setting modal — mini edition
+ * Connections are edited via connection popup, not this settings drawer.
  */
 
 import { auto } from 'manate/react'
@@ -11,16 +12,18 @@ import {
   settingMap,
   modals
 } from '../../common/constants'
-const TabBookmarks = lazy(() => import('./tab-bookmarks'))
-const TabQuickCommands = lazy(() => import('./tab-quick-commands'))
+
 const TabSettings = lazy(() => import('./tab-settings'))
 const TabThemes = lazy(() => import('./tab-themes'))
-const TabProfiles = lazy(() => import('./tab-profiles'))
-const TabWidgets = lazy(() => import('./tab-widgets'))
 
 const Loading = () => <div style={{ padding: 20, textAlign: 'center' }}><Spin /></div>
 
 const e = window.translate
+
+const miniTabs = [
+  settingMap.setting,
+  settingMap.terminalThemes
+]
 
 export default auto(function SettingModalWrap (props) {
   const selectItem = (item) => {
@@ -30,56 +33,32 @@ export default auto(function SettingModalWrap (props) {
   function renderTabs () {
     const { store } = props
     const tabsShouldConfirmDel = [
-      settingMap.bookmarks,
       settingMap.terminalThemes
     ]
-    const { settingTab, settingItem, settingSidebarList, bookmarkSelectMode } = store
+    const { settingTab, settingItem, settingSidebarList } = store
+    const activeTab = miniTabs.includes(settingTab)
+      ? settingTab
+      : settingMap.setting
     const props0 = {
       store,
       activeItemId: settingItem.id,
-      type: settingTab,
+      type: activeTab,
       onClickItem: selectItem,
-      shouldConfirmDel: tabsShouldConfirmDel.includes(settingTab),
+      shouldConfirmDel: tabsShouldConfirmDel.includes(activeTab),
       list: settingSidebarList
     }
-    const { bookmarks, bookmarkGroups, widgetInstances } = store
     const formProps = {
       store,
       formData: settingItem,
-      type: settingTab,
+      type: activeTab,
       hide: store.hideSettingModal,
       ...pick(store, [
-        'currentBookmarkGroupId',
         'config'
       ]),
-      bookmarkGroups,
-      bookmarks,
-      widgetInstancesLength: widgetInstances.length,
       serials: store.serials,
       loaddingSerials: store.loaddingSerials
     }
-    const treeProps = {
-      ...props0,
-      bookmarkSelectMode,
-      bookmarkGroups,
-      bookmarkGroupTree: store.bookmarkGroupTree,
-      bookmarksMap: store.bookmarksMap,
-      bookmarks,
-      ...pick(store, [
-        'currentBookmarkGroupId',
-        'config',
-        'checkedKeys',
-        'expandedKeys',
-        'leftSidePanelWidth',
-        'initLoadingData'
-      ])
-    }
     const items = [
-      {
-        key: settingMap.bookmarks,
-        label: e(settingMap.bookmarks),
-        children: null
-      },
       {
         key: settingMap.setting,
         label: e(settingMap.setting),
@@ -87,27 +66,12 @@ export default auto(function SettingModalWrap (props) {
       },
       {
         key: settingMap.terminalThemes,
-        label: e('uiThemes'),
-        children: null
-      },
-      {
-        key: settingMap.quickCommands,
-        label: e(settingMap.quickCommands),
-        children: null
-      },
-      {
-        key: settingMap.profiles,
-        label: e(settingMap.profiles),
-        children: null
-      },
-      {
-        key: settingMap.widgets,
-        label: <>{e(settingMap.widgets)} <sup>Beta</sup></>,
+        label: 'UI主题设置',
         children: null
       }
     ]
     const tabsProps = {
-      activeKey: settingTab,
+      activeKey: activeTab,
       animated: false,
       items,
       onChange: store.handleChangeSettingTab,
@@ -121,23 +85,10 @@ export default auto(function SettingModalWrap (props) {
           {...tabsProps}
         />
         <Suspense fallback={<Loading />}>
-          <TabQuickCommands
-            listProps={props0}
-            settingItem={settingItem}
-            formProps={formProps}
-            store={store}
-            settingTab={settingTab}
-          />
-          <TabBookmarks
-            treeProps={treeProps}
-            settingItem={settingItem}
-            formProps={formProps}
-            settingTab={settingTab}
-          />
           <TabSettings
             listProps={props0}
             settingItem={settingItem}
-            settingTab={settingTab}
+            settingTab={activeTab}
             store={store}
           />
           <TabThemes
@@ -145,21 +96,7 @@ export default auto(function SettingModalWrap (props) {
             settingItem={settingItem}
             formProps={formProps}
             store={store}
-            settingTab={settingTab}
-          />
-          <TabProfiles
-            listProps={props0}
-            settingItem={settingItem}
-            formProps={formProps}
-            store={store}
-            settingTab={settingTab}
-          />
-          <TabWidgets
-            listProps={props0}
-            settingItem={settingItem}
-            formProps={formProps}
-            store={store}
-            settingTab={settingTab}
+            settingTab={activeTab}
           />
         </Suspense>
       </>

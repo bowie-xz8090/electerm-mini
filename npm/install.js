@@ -1,11 +1,11 @@
 /**
- * install electerm from binary
- * After npm i -g electerm, running `electerm` command will:
+ * install electerm-mini from binary
+ * After npm i -g electerm-mini, running `electerm-mini` will:
  * 1. Download the appropriate binary for the platform
- * 2. Extract it to the package directory (electerm/)
- * 3. The bash script (npm/electerm) then launches the extracted binary
+ * 2. Extract it to the package directory (electerm-mini/)
+ * 3. The launcher (npm/electerm-mini) then launches the extracted binary
  *
- * This script only downloads and extracts. Launching is handled by the bash script.
+ * This script only downloads and extracts. Launching is handled by the launcher script.
  */
 
 const os = require('os')
@@ -22,10 +22,10 @@ const { homepage } = require('../package.json')
 const releaseInfoUrl = `${homepage}/data/electerm-github-release.json?_=${+new Date()}`
 const versionUrl = `${homepage}/version.html?_=${+new Date()}`
 
-// Directory where electerm package is installed
+// Directory where electerm-mini package is installed
 const packageRoot = resolve(__dirname, '..')
 // Directory where the extracted binary will live
-const extractDir = join(packageRoot, 'electerm')
+const extractDir = join(packageRoot, 'electerm-mini')
 
 // ---------------------------------------------------------------------------
 // Security helpers
@@ -79,13 +79,13 @@ function getReleaseInfo (filter) {
 function showFinalMessage () {
   console.log('')
   console.log('========================================')
-  console.log('electerm installation complete!')
+  console.log('electerm-mini installation complete!')
   console.log('========================================')
   console.log('')
   console.log('For more information, documentation, and updates, please visit:')
   console.log('https://electerm.org')
   console.log('')
-  console.log('Thank you for using electerm!')
+  console.log('Thank you for using electerm-mini!')
   console.log('========================================')
   console.log('')
 }
@@ -125,18 +125,18 @@ function isLinuxLegacy (platform) {
 // ---------------------------------------------------------------------------
 
 /**
- * Get the path to the extracted electerm executable
+ * Get the path to the extracted electerm-mini executable
  */
 function getElectermExePath () {
   if (plat === 'win32') {
-    return join(extractDir, 'electerm.exe')
+    return join(extractDir, 'electerm-mini.exe')
   }
   // Linux and macOS (if extracted)
-  return join(extractDir, 'electerm')
+  return join(extractDir, 'electerm-mini')
 }
 
 /**
- * Check if the electerm binary has been extracted already
+ * Check if the electerm-mini binary has been extracted already
  */
 function isElectermExtracted () {
   const exePath = getElectermExePath()
@@ -154,7 +154,7 @@ async function runLinux (folderName, filePattern) {
   console.log(`  Version: ${ver}`)
   console.log(`  Target: ${folderName}`)
 
-  const target = join(packageRoot, `electerm-${ver}-${folderName}`)
+  const target = join(packageRoot, `electerm-mini-${ver}-${folderName}`)
 
   // Clean up old installations
   rm('-rf', [target, extractDir])
@@ -167,7 +167,7 @@ async function runLinux (folderName, filePattern) {
 
   // Download without extracting to packageRoot directly
   // We'll extract to a temp location first
-  const tmpDir = join(packageRoot, '.electerm-tmp')
+  const tmpDir = join(packageRoot, '.electerm-mini-tmp')
   rm('-rf', tmpDir)
   fs.mkdirSync(tmpDir, { recursive: true })
 
@@ -200,7 +200,7 @@ async function runLinux (folderName, filePattern) {
       console.log('  Note: To enable the Electron sandbox, run:')
       console.log(`    sudo chown root:root "${chromeSandboxPath}"`)
       console.log(`    sudo chmod 4755 "${chromeSandboxPath}"`)
-      console.log('  Otherwise, electerm will launch with --no-sandbox automatically.')
+      console.log('  Otherwise, electerm-mini will launch with --no-sandbox automatically.')
     }
   }
 
@@ -217,7 +217,7 @@ async function runWin (archName) {
   console.log(`  Version: ${ver}`)
   console.log(`  Target: win-${archName}`)
 
-  const target = join(packageRoot, `electerm-${ver}-win-${archName}`)
+  const target = join(packageRoot, `electerm-mini-${ver}-win-${archName}`)
 
   rm('-rf', [target, extractDir])
   fs.mkdirSync(extractDir, { recursive: true })
@@ -231,7 +231,7 @@ async function runWin (archName) {
 
   // Download to a temp file, then extract directly to extractDir with strip:1
   // (avoids a rename which can fail on Windows when AV has file locks)
-  const tmpDir = join(packageRoot, '.electerm-tmp')
+  const tmpDir = join(packageRoot, '.electerm-mini-tmp')
   rm('-rf', tmpDir)
   fs.mkdirSync(tmpDir, { recursive: true })
 
@@ -247,7 +247,7 @@ async function runWin (archName) {
 
   const exePath = getElectermExePath()
   if (!fs.existsSync(exePath)) {
-    throw new Error(`electerm.exe not found at ${exePath} after extraction. Archive may have an unexpected structure.`)
+    throw new Error(`electerm-mini.exe not found at ${exePath} after extraction. Archive may have an unexpected structure.`)
   }
 
   showFinalMessage()
@@ -260,18 +260,18 @@ async function runWin7 () {
   console.log(`  Version: ${ver}`)
   console.log('  Target: win7')
 
-  const target = join(packageRoot, `electerm-${ver}-win7`)
+  const target = join(packageRoot, `electerm-mini-${ver}-win7`)
 
   rm('-rf', [target, extractDir])
   fs.mkdirSync(extractDir, { recursive: true })
 
   console.log('  Fetching release info...')
-  const releaseInfo = await getReleaseInfo(r => /electerm-\d+\.\d+\.\d+-win7\.tar\.gz$/.test(r.name))
+  const releaseInfo = await getReleaseInfo(r => /electerm-mini-\d+\.\d+\.\d+-win7\.tar\.gz$/.test(r.name))
   if (!releaseInfo) {
     throw new Error('No release found for Windows 7')
   }
 
-  const tmpDir = join(packageRoot, '.electerm-tmp')
+  const tmpDir = join(packageRoot, '.electerm-mini-tmp')
   rm('-rf', tmpDir)
   fs.mkdirSync(tmpDir, { recursive: true })
 
@@ -287,7 +287,7 @@ async function runWin7 () {
 
   const exePath = getElectermExePath()
   if (!fs.existsSync(exePath)) {
-    throw new Error(`electerm.exe not found at ${exePath} after extraction. Archive may have an unexpected structure.`)
+    throw new Error(`electerm-mini.exe not found at ${exePath} after extraction. Archive may have an unexpected structure.`)
   }
 
   showFinalMessage()
@@ -411,7 +411,7 @@ async function runMac (archName) {
     }
 
     console.log('')
-    console.log('  Installation complete! You can now launch electerm from /Applications')
+    console.log('  Installation complete! You can now launch electerm-mini from /Applications')
   } catch (err) {
     console.error('')
     console.error('  Warning: Automatic installation failed:', err.message)
@@ -451,7 +451,7 @@ async function runMac10 () {
     }
 
     console.log('')
-    console.log('  Installation complete! You can now launch electerm from /Applications')
+    console.log('  Installation complete! You can now launch electerm-mini from /Applications')
   } catch (err) {
     console.error('')
     console.error('  Warning: Automatic installation failed:', err.message)
@@ -469,7 +469,7 @@ async function runMac10 () {
 async function main () {
   console.log('')
   console.log('========================================')
-  console.log('electerm binary installer')
+  console.log('electerm-mini binary installer')
   console.log('========================================')
   console.log(`Platform: ${plat}, Architecture: ${arch}`)
 
