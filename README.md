@@ -5,6 +5,9 @@ A trimmed desktop client based on [electerm](https://github.com/electerm/electer
 [![English](https://img.shields.io/badge/English-EN-blue)](README.md) [![中文](https://img.shields.io/badge/中文-Chinese-blue)](README_cn.md)
 
 > This repository is **electerm-mini**. Upstream electerm still provides the full multi-protocol client. See [electerm.org](https://electerm.org) for the original product.
+<img width="2560" height="1380" alt="image" src="https://github.com/user-attachments/assets/d83f51af-df04-464b-acaa-30e7e7ee5bb1" />
+<img width="2560" height="1380" alt="image" src="https://github.com/user-attachments/assets/daa57218-97f1-4f55-bee2-3dae4886f0df" />
+<img width="2560" height="1380" alt="image" src="https://github.com/user-attachments/assets/92d01364-18be-414a-b318-8d165ff55eb0" />
 
 ## What is kept
 
