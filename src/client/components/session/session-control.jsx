@@ -7,22 +7,26 @@ import {
   FullscreenOutlined,
   PaperClipOutlined,
   CloseOutlined,
+  InfoCircleOutlined,
+  DoubleRightOutlined,
   ApartmentOutlined,
   MoreOutlined,
   ColumnWidthOutlined,
   LogoutOutlined,
   ReloadOutlined
 } from '@ant-design/icons'
-import { Tooltip, Popover } from 'antd'
+import { Tooltip, Popover, Select } from 'antd'
 import classnames from 'classnames'
 import {
   paneMap,
   connectionMap,
+  statusMap,
   terminalSerialType
 } from '../../common/constants'
 import { SplitViewIcon } from '../icons/split-view'
 import { HeartbeatIcon } from '../icons/heartbeat'
 import TransferList from '../sidebar/transfer-list'
+import encodes from '../bookmark-form/common/encodes'
 import './session-control.styl'
 
 const e = window.translate
@@ -31,6 +35,7 @@ export default function SessionControl (props) {
   const {
     tab,
     isMobile,
+    showSidebarControl,
     isDisabled,
     isSshDisabled,
     isNotTerminalType,
@@ -49,6 +54,9 @@ export default function SessionControl (props) {
     toggleWrap,
     onFullscreen,
     onOpenSearch,
+    onShowInfo,
+    onSwitchEncoding,
+    onShowSidebar,
     onDismissDelKeyTip,
     onExitGracefully,
     onReload
@@ -301,6 +309,51 @@ export default function SessionControl (props) {
     )
   }
 
+  function renderInfoIcon () {
+    if (tab.status !== statusMap.success) {
+      return null
+    }
+    return (
+      <Tooltip title={e('info')} placement='bottomLeft'>
+        <InfoCircleOutlined
+          className='sess-icon pointer terminal-info-icon'
+          onClick={onShowInfo}
+        />
+      </Tooltip>
+    )
+  }
+
+  function renderShowSidebarIcon () {
+    if (!showSidebarControl) {
+      return null
+    }
+    return (
+      <Tooltip title={e('show')} placement='bottomLeft'>
+        <DoubleRightOutlined
+          className='sess-icon pointer show-sidebar-icon'
+          onClick={onShowSidebar}
+        />
+      </Tooltip>
+    )
+  }
+
+  function renderEncodingSelect () {
+    return (
+      <Select
+        className='session-encoding-select'
+        value={props.encoding}
+        onChange={onSwitchEncoding}
+        options={encodes.map(encode => ({
+          label: encode.toUpperCase(),
+          value: encode
+        }))}
+        size='small'
+        popupMatchSelectWidth={false}
+        aria-label={e('encode')}
+      />
+    )
+  }
+
   function renderFullscreenIcon () {
     const title = e('fullscreen')
     return (
@@ -320,6 +373,7 @@ export default function SessionControl (props) {
     }
     return (
       <div className='fright term-controls'>
+        {renderEncodingSelect()}
         {renderFullscreenIcon()}
         {renderSearchIcon()}
       </div>
@@ -338,11 +392,13 @@ export default function SessionControl (props) {
         {renderReloadIcon()}
         {renderTransferIcon()}
         {renderExitGracefullyIcon()}
+        {renderInfoIcon()}
         {renderTermControls()}
       </div>
     )
     return (
       <div className='terminal-control mobile-session-control'>
+        {renderShowSidebarIcon()}
         {renderPaneControl()}
         <Popover
           content={extraIcons}
@@ -358,6 +414,7 @@ export default function SessionControl (props) {
   // ---- desktop ----
   return (
     <div className='terminal-control fix'>
+      {renderShowSidebarIcon()}
       {renderPaneControl()}
       {renderSftpPathFollowControl()}
       {renderSplitToggle()}
@@ -367,6 +424,7 @@ export default function SessionControl (props) {
       {renderReloadIcon()}
       {renderTransferIcon()}
       {renderExitGracefullyIcon()}
+      {renderInfoIcon()}
       {renderTermControls()}
     </div>
   )

@@ -7,6 +7,7 @@ import TerminalInfoBase from './base'
 import TerminalInfoUp from './up'
 import TerminalInfoNetwork from './network'
 import TerminalInfoResource from './resource'
+import TerminalInfoDocker from './docker'
 import TerminalInfoActivities from './activity'
 import TerminalInfoDisk from './disk'
 import RunCmd from './run-cmd'
@@ -19,6 +20,7 @@ export default class TerminalInfoContent extends PureComponent {
     cpu: '',
     mem: {},
     swap: {},
+    dockers: [],
     activities: [],
     disks: [],
     network: {}
@@ -48,6 +50,7 @@ export default class TerminalInfoContent extends PureComponent {
         <TerminalInfoResource
           {...props} {...state}
         />
+        <TerminalInfoDocker {...props} {...state} />
         <TerminalInfoActivities
           {...props}
           {...state}

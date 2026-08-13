@@ -49,7 +49,8 @@ export default class SessionWrapper extends Component {
       delKeyPressed: false,
       broadcastInput: false,
       keepaliveEnabled: false,
-      wrapDisabled: false
+      wrapDisabled: false,
+      encoding: props.tab.encode || 'utf-8'
     }
     if (props.tab.sshSftpSplitView === undefined) {
       props.tab.sshSftpSplitView = !!props.config.sshSftpSplitView
@@ -498,6 +499,24 @@ export default class SessionWrapper extends Component {
     refs.get('term-' + this.props.tab.id)?.toggleSearch()
   }
 
+  handleShowInfo = () => {
+    window.store.activeTabId = this.props.tab.id
+    window.store.openInfoPanel()
+  }
+
+  handleSwitchEncoding = (encode) => {
+    const term = refs.get('term-' + this.props.tab.id)
+    if (!term) {
+      return
+    }
+    term.switchEncoding(encode)
+    this.setState({ encoding: encode })
+  }
+
+  handleShowSidebar = () => {
+    window.store.toggleLeftSideBar()
+  }
+
   toggleWrap = () => {
     const termRef = refs.get('term-' + this.props.tab.id)
     if (!termRef?.term) {
@@ -625,6 +644,7 @@ export default class SessionWrapper extends Component {
         <SessionControl
           tab={this.props.tab}
           isMobile={window.store.isMobile}
+          showSidebarControl={this.props.leftSideBarWidth === 0}
           isDisabled={this.isDisabled()}
           isSshDisabled={this.isSshDisabled()}
           isNotTerminalType={this.isNotTerminalType()}
@@ -633,6 +653,7 @@ export default class SessionWrapper extends Component {
           keepaliveEnabled={this.state.keepaliveEnabled}
           broadcastInput={this.state.broadcastInput}
           wrapDisabled={this.state.wrapDisabled}
+          encoding={this.state.encoding}
           delKeyPressed={this.state.delKeyPressed}
           hideDelKeyTip={this.props.hideDelKeyTip}
           onChangePane={(pane) => this.onChangePane(pane)}
@@ -643,6 +664,9 @@ export default class SessionWrapper extends Component {
           toggleWrap={this.toggleWrap}
           onFullscreen={this.handleFullscreen}
           onOpenSearch={this.handleOpenSearch}
+          onShowInfo={this.handleShowInfo}
+          onSwitchEncoding={this.handleSwitchEncoding}
+          onShowSidebar={this.handleShowSidebar}
           onDismissDelKeyTip={this.handleDismissDelKeyTip}
           onExitGracefully={this.handleExitGracefully}
           onReload={() => this.props.reloadTab(this.props.tab)}

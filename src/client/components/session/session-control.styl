@@ -1,5 +1,9 @@
 // Mobile session control: pane tabs always visible,
 // other icons shown in a floating Popover overlay
+.term-sftp-box > .terminal-control
+  height 32px
+  box-sizing border-box
+
 .mobile-session-control
   background var(--main)
   line-height 32px
@@ -36,3 +40,29 @@
     margin-left 0
   .sess-icon
     margin-right 0
+
+.term-controls
+  display flex
+  align-items center
+  gap 10px
+  height 32px
+  .spliter
+    margin-right 0
+
+.session-encoding-select
+  min-width 76px
+  .ant-select-selector
+    height 24px !important
+  .ant-select-selection-item
+    line-height 22px !important
+
+@container (max-width: 430px)
+  .terminal-control:not(.mobile-session-control)
+    .sftp-follow-ssh-icon,
+    .split-view-toggle,
+    .keepalive-icon,
+    .broadcast-icon,
+    .wrap-toggle-icon,
+    .reload-session-icon,
+    .transfer-session-wrap
+      display none

@@ -7,6 +7,10 @@ import { useEffect } from 'react'
 import wait from '../../common/wait'
 import parseInt10 from '../../common/parse-int10'
 import formatDisks from './format-disks'
+import formatDockers from './format-dockers'
+
+const dockerInspectCmd = 'ids="$(docker ps -aq 2>/dev/null)"; [ -z "$ids" ] || docker inspect --format \'{{json .}}\' $ids 2>/dev/null'
+const dockerStatsCmd = 'docker stats --no-stream --no-trunc --format \'{{json .}}\' 2>/dev/null'
 
 function formatActivities (str) {
   if (!str) {
@@ -174,6 +178,16 @@ export default (props) => {
       formatter: d => ({ uptime: d })
     },
     {
+      name: 'dockers',
+      cmds: [
+        dockerInspectCmd,
+        dockerStatsCmd
+      ],
+      interval: 10000,
+      delay: 1000,
+      formatter: formatDockers
+    },
+    {
       name: 'activities',
       cmd: 'ps --no-headers -o pid,user,%cpu,size,command ax | sort -b -k3 -r',
       interval: 5000,
@@ -212,13 +226,15 @@ export default (props) => {
       interval: 5000
     }
   ]
-  return cmds.map(options => {
-    return (
-      <InfoGetter
-        key={'info-getter-' + options.name}
-        {...props}
-        options={options}
-      />
-    )
-  })
+  return cmds
+    .filter(options => options.name !== 'dockers' || props.terminalInfos.includes('dockers'))
+    .map(options => {
+      return (
+        <InfoGetter
+          key={'info-getter-' + options.name}
+          {...props}
+          options={options}
+        />
+      )
+    })
 }

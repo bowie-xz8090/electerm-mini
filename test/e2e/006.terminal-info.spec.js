@@ -30,7 +30,7 @@ describe('info panel', function () {
 
     // Test local terminal info panel
     log('click info icon for local terminal')
-    await client.click('.terminal-footer-info .terminal-info-icon')
+    await client.click(`.session-${initialTabId} .terminal-info-icon`)
     await delay(1000)
 
     await client.hasElem('.right-side-panel')

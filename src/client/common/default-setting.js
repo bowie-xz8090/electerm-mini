@@ -54,6 +54,7 @@ export default {
     'uptime',
     'cpu',
     'mem',
+    'dockers',
     'activities',
     'network',
     'disks'

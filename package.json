@@ -1,7 +1,7 @@
 {
   "name": "electerm-mini",
   "productName": "electerm-mini",
-  "version": "5.0.8",
+  "version": "5.0.9",
   "description": "electerm-mini: SSH/SFTP client with AI Smart Shell (Windows/macOS/Linux)",
   "main": "app.js",
   "bin": "npm/electerm-mini",

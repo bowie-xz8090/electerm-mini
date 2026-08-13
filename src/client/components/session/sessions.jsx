@@ -75,6 +75,7 @@ export default class Sessions extends Component {
           'tabsHeight',
           'appPath',
           'leftSidePanelWidth',
+          'leftSideBarWidth',
           'pinned',
           'openedSideBar',
           'fullscreen'

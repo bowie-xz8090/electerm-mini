@@ -3,13 +3,11 @@ import Layouts from './layouts'
 import TabsWrap from '../tabs/index'
 import {
   splitConfig,
-  quickCommandBoxHeight,
-  footerHeight
+  quickCommandBoxHeight
 } from '../../common/constants'
 import layoutAlg from './layout-alg'
 import calcSessionSize from './session-size-alg'
 import TermSearch from '../terminal/term-search'
-import Footer from '../footer/footer-entry'
 import SessionsWrap from '../session/sessions'
 import pixed from './pixed'
 import { pick } from 'lodash-es'
@@ -42,7 +40,7 @@ export default auto(function Layout (props) {
       resizeTrigger,
       inActiveTerminal
     } = props.store
-    const h = height - footerHeight - (inActiveTerminal && pinnedQuickCommandBar ? quickCommandBoxHeight : 0) + resizeTrigger
+    const h = height - (inActiveTerminal && pinnedQuickCommandBar ? quickCommandBoxHeight : 0) + resizeTrigger
     const l = pinned ? leftSideBarWidth + leftSidePanelWidth : leftSideBarWidth
     const r = rightPanelVisible && rightPanelPinned ? rightPanelWidth : 0
     return {
@@ -71,7 +69,7 @@ export default auto(function Layout (props) {
     // account for the far-left icon bar (sidebarWidth - 1px border on desktop;
     // 0 when the bar is hidden on mobile)
     const w = width - l - r - (leftSideBarWidth > 0 ? leftSideBarWidth - 1 : 0)
-    const h = height - footerHeight - (pinnedQuickCommandBar ? quickCommandBoxHeight : 0)
+    const h = height - (pinnedQuickCommandBar ? quickCommandBoxHeight : 0)
     return layoutAlg(layout, w, h)
   }
   const layoutSize = calcLayoutStyle()
@@ -146,9 +144,6 @@ export default auto(function Layout (props) {
       'termSearchMatchIndex'
     ])
   }
-  const footerProps = {
-    store
-  }
   const sessionsProps = {
     styles: styles.wrapStyles,
     sizes,
@@ -170,6 +165,7 @@ export default auto(function Layout (props) {
       'tabsHeight',
       'appPath',
       'leftSidePanelWidth',
+      'leftSideBarWidth',
       'pinned',
       'openedSideBar',
       'config',
@@ -186,10 +182,6 @@ export default auto(function Layout (props) {
     <TermSearch
       key='TermSearch'
       {...termProps}
-    />,
-    <Footer
-      key='Footer'
-      {...footerProps}
     />
   ]
 })

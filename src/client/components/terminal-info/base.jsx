@@ -13,6 +13,7 @@ import {
   ClockCircleOutlined,
   BorderlessTableOutlined,
   DatabaseOutlined,
+  ContainerOutlined,
   BarsOutlined,
   ApiOutlined,
   PartitionOutlined
@@ -28,6 +29,7 @@ const mapper = {
   uptime: <ClockCircleOutlined />,
   cpu: <BorderlessTableOutlined />,
   mem: <DatabaseOutlined />,
+  dockers: <ContainerOutlined />,
   activities: <BarsOutlined />,
   network: <ApiOutlined />,
   disks: <PartitionOutlined />
@@ -138,7 +140,7 @@ export default class TerminalInfoBase extends Component {
       terminalInfos
     } = this.props
     return (
-      <Space.Compact className='width-100'>
+      <Space.Compact className='width-100 terminal-info-select'>
         {
           defaults.terminalInfos.map(f => {
             const type = terminalInfos.includes(f) ? 'primary' : 'default'
